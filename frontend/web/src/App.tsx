@@ -6,6 +6,18 @@ import './App.css'
 
 function App() {
   const [count, setCount] = useState(0)
+  const [apiResponse, setApiResponse] = useState<string | null>(null)
+
+  async function callGreeting() {
+    try {
+      const res = await fetch('/api/test/greeting')
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const data = await res.json()
+      setApiResponse(data?.message ?? JSON.stringify(data))
+    } catch (err) {
+      setApiResponse(String(err))
+    }
+  }
 
   return (
     <>
@@ -28,6 +40,16 @@ function App() {
         >
           Count is {count}
         </button>
+        <div style={{ marginTop: 12 }}>
+          <button type="button" onClick={callGreeting}>
+            Call API: Greeting
+          </button>
+          {apiResponse && (
+            <div style={{ marginTop: 8 }}>
+              <strong>API:</strong> <span>{apiResponse}</span>
+            </div>
+          )}
+        </div>
       </section>
 
       <div className="ticks"></div>
