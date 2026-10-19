@@ -7,13 +7,25 @@ import './App.css'
 function App() {
   const [count, setCount] = useState(0)
   const [apiResponse, setApiResponse] = useState<string | null>(null)
+  const [createdId, setCreatedId] = useState<number | null>(null)
 
-  async function callGreeting() {
+    async function callGreeting() {
+        try {
+            const res = await fetch('/api/test/greeting')
+            if (!res.ok) throw new Error(`HTTP ${res.status}`)
+            const data = await res.json()
+            setApiResponse(data?.message ?? JSON.stringify(data))
+        } catch (err) {
+            setApiResponse(String(err))
+        }
+    }
+
+  async function createTestRecord() {
     try {
-      const res = await fetch('/api/test/greeting')
+      const res = await fetch('/api/testdb/create')
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const data = await res.json()
-      setApiResponse(data?.message ?? JSON.stringify(data))
+      setCreatedId(data?.id ?? null)
     } catch (err) {
       setApiResponse(String(err))
     }
@@ -44,9 +56,17 @@ function App() {
           <button type="button" onClick={callGreeting}>
             Call API: Greeting
           </button>
+          <button style={{ marginLeft: 8 }} type="button" onClick={createTestRecord}>
+            Create test record
+          </button>
           {apiResponse && (
             <div style={{ marginTop: 8 }}>
               <strong>API:</strong> <span>{apiResponse}</span>
+            </div>
+          )}
+          {createdId !== null && (
+            <div style={{ marginTop: 8 }}>
+              <strong>Created record id:</strong> <span>{createdId}</span>
             </div>
           )}
         </div>
