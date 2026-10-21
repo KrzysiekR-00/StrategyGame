@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import type { FormEvent } from 'react'
 import heroImg from './assets/hero.png'
 import reactLogo from './assets/react.svg'
 import viteLogo from './assets/vite.svg'
@@ -8,17 +9,65 @@ function App() {
   const [count, setCount] = useState(0)
   const [apiResponse, setApiResponse] = useState<string | null>(null)
   const [createdId, setCreatedId] = useState<number | null>(null)
+  const [username, setUsername] = useState('')
+  const [password, setPassword] = useState('')
+  const [registrationMessage, setRegistrationMessage] = useState<string | null>(null)
+  const [registrationError, setRegistrationError] = useState<string | null>(null)
+  const [isRegistering, setIsRegistering] = useState(false)
 
-    async function callGreeting() {
-        try {
-            const res = await fetch('/api/test/greeting')
-            if (!res.ok) throw new Error(`HTTP ${res.status}`)
-            const data = await res.json()
-            setApiResponse(data?.message ?? JSON.stringify(data))
-        } catch (err) {
-            setApiResponse(String(err))
-        }
+  async function callGreeting() {
+    try {
+      const res = await fetch('/api/test/greeting')
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const data = await res.json()
+      setApiResponse(data?.message ?? JSON.stringify(data))
+    } catch (err) {
+      setApiResponse(String(err))
     }
+  }
+
+  async function register(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    setRegistrationMessage(null)
+    setRegistrationError(null)
+
+    if (username.trim().length < 3) {
+      setRegistrationError('Login musi mieć co najmniej 3 znaki.')
+      return
+    }
+
+    if (password.length < 8) {
+      setRegistrationError('Hasło musi mieć co najmniej 8 znaków.')
+      return
+    }
+
+    setIsRegistering(true)
+
+    try {
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: username.trim(), password }),
+      })
+
+      const data = await response.json().catch(() => null)
+
+      if (!response.ok) {
+        const errors = data?.errors
+          ? Object.values(data.errors).flat().join(' ')
+          : data?.title ?? 'Nie udało się zarejestrować użytkownika.'
+        throw new Error(String(errors))
+      }
+
+      setRegistrationMessage(data?.message ?? 'Rejestracja zakończona pomyślnie.')
+      setUsername('')
+      setPassword('')
+    } catch (error) {
+      setRegistrationError(error instanceof Error ? error.message : 'Wystąpił nieoczekiwany błąd.')
+    } finally {
+      setIsRegistering(false)
+    }
+  }
 
   async function createTestRecord() {
     try {
@@ -70,6 +119,41 @@ function App() {
             </div>
           )}
         </div>
+
+        <form onSubmit={register} style={{ marginTop: 24 }}>
+          <h2>Rejestracja</h2>
+          <div>
+            <label htmlFor="username">Login</label>
+            <input
+              id="username"
+              type="text"
+              value={username}
+              onChange={(event) => setUsername(event.target.value)}
+              minLength={3}
+              maxLength={30}
+              required
+              autoComplete="username"
+            />
+          </div>
+          <div style={{ marginTop: 8 }}>
+            <label htmlFor="password">Hasło</label>
+            <input
+              id="password"
+              type="password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              minLength={8}
+              maxLength={100}
+              required
+              autoComplete="new-password"
+            />
+          </div>
+          <button type="submit" disabled={isRegistering} style={{ marginTop: 8 }}>
+            {isRegistering ? 'Rejestracja...' : 'Zarejestruj'}
+          </button>
+          {registrationError && <p role="alert">{registrationError}</p>}
+          {registrationMessage && <p role="status">{registrationMessage}</p>}
+        </form>
       </section>
 
       <div className="ticks"></div>
