@@ -9,11 +9,19 @@ function App() {
   const [count, setCount] = useState(0)
   const [apiResponse, setApiResponse] = useState<string | null>(null)
   const [createdId, setCreatedId] = useState<number | null>(null)
-  const [username, setUsername] = useState('')
-  const [password, setPassword] = useState('')
+
+  const [registerUsername, setRegisterUsername] = useState('')
+  const [registerPassword, setRegisterPassword] = useState('')
+  const [loginUsername, setLoginUsername] = useState('')
+  const [loginPassword, setLoginPassword] = useState('')
+
   const [registrationMessage, setRegistrationMessage] = useState<string | null>(null)
   const [registrationError, setRegistrationError] = useState<string | null>(null)
+  const [loginMessage, setLoginMessage] = useState<string | null>(null)
+  const [loginError, setLoginError] = useState<string | null>(null)
+
   const [isRegistering, setIsRegistering] = useState(false)
+  const [isLoggingIn, setIsLoggingIn] = useState(false)
 
   async function callGreeting() {
     try {
@@ -31,12 +39,12 @@ function App() {
     setRegistrationMessage(null)
     setRegistrationError(null)
 
-    if (username.trim().length < 3) {
+    if (registerUsername.trim().length < 3) {
       setRegistrationError('Login musi mieć co najmniej 3 znaki.')
       return
     }
 
-    if (password.length < 8) {
+    if (registerPassword.length < 8) {
       setRegistrationError('Hasło musi mieć co najmniej 8 znaków.')
       return
     }
@@ -47,7 +55,7 @@ function App() {
       const response = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: username.trim(), password }),
+        body: JSON.stringify({ username: registerUsername.trim(), password: registerPassword }),
       })
 
       const data = await response.json().catch(() => null)
@@ -60,12 +68,57 @@ function App() {
       }
 
       setRegistrationMessage(data?.message ?? 'Rejestracja zakończona pomyślnie.')
-      setUsername('')
-      setPassword('')
+      setRegisterUsername('')
+      setRegisterPassword('')
     } catch (error) {
       setRegistrationError(error instanceof Error ? error.message : 'Wystąpił nieoczekiwany błąd.')
     } finally {
       setIsRegistering(false)
+    }
+  }
+
+  async function login(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    setLoginMessage(null)
+    setLoginError(null)
+
+    if (loginUsername.trim().length < 3) {
+      setLoginError('Login musi mieć co najmniej 3 znaki.')
+      return
+    }
+
+    if (loginPassword.length < 8) {
+      setLoginError('Hasło musi mieć co najmniej 8 znaków.')
+      return
+    }
+
+    setIsLoggingIn(true)
+
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: loginUsername.trim(), password: loginPassword }),
+      })
+
+      const data = await response.json().catch(() => null)
+
+      if (!response.ok) {
+        const message = data?.message ?? 'Nieprawidłowy login lub hasło.'
+        throw new Error(String(message))
+      }
+
+      if (data?.token) {
+        localStorage.setItem('authToken', data.token)
+      }
+
+      setLoginMessage(data?.message ?? 'Zalogowano pomyślnie.')
+      setLoginUsername('')
+      setLoginPassword('')
+    } catch (error) {
+      setLoginError(error instanceof Error ? error.message : 'Wystąpił nieoczekiwany błąd.')
+    } finally {
+      setIsLoggingIn(false)
     }
   }
 
@@ -120,40 +173,77 @@ function App() {
           )}
         </div>
 
-        <form onSubmit={register} style={{ marginTop: 24 }}>
-          <h2>Rejestracja</h2>
-          <div>
-            <label htmlFor="username">Login</label>
-            <input
-              id="username"
-              type="text"
-              value={username}
-              onChange={(event) => setUsername(event.target.value)}
-              minLength={3}
-              maxLength={30}
-              required
-              autoComplete="username"
-            />
-          </div>
-          <div style={{ marginTop: 8 }}>
-            <label htmlFor="password">Hasło</label>
-            <input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              minLength={8}
-              maxLength={100}
-              required
-              autoComplete="new-password"
-            />
-          </div>
-          <button type="submit" disabled={isRegistering} style={{ marginTop: 8 }}>
-            {isRegistering ? 'Rejestracja...' : 'Zarejestruj'}
-          </button>
-          {registrationError && <p role="alert">{registrationError}</p>}
-          {registrationMessage && <p role="status">{registrationMessage}</p>}
-        </form>
+        <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap', marginTop: 24 }}>
+          <form onSubmit={register} style={{ minWidth: 260 }}>
+            <h2>Rejestracja</h2>
+            <div>
+              <label htmlFor="register-username">Login</label>
+              <input
+                id="register-username"
+                type="text"
+                value={registerUsername}
+                onChange={(event) => setRegisterUsername(event.target.value)}
+                minLength={3}
+                maxLength={30}
+                required
+                autoComplete="username"
+              />
+            </div>
+            <div style={{ marginTop: 8 }}>
+              <label htmlFor="register-password">Hasło</label>
+              <input
+                id="register-password"
+                type="password"
+                value={registerPassword}
+                onChange={(event) => setRegisterPassword(event.target.value)}
+                minLength={8}
+                maxLength={100}
+                required
+                autoComplete="new-password"
+              />
+            </div>
+            <button type="submit" disabled={isRegistering} style={{ marginTop: 8 }}>
+              {isRegistering ? 'Rejestracja...' : 'Zarejestruj'}
+            </button>
+            {registrationError && <p role="alert">{registrationError}</p>}
+            {registrationMessage && <p role="status">{registrationMessage}</p>}
+          </form>
+
+          <form onSubmit={login} style={{ minWidth: 260 }}>
+            <h2>Logowanie</h2>
+            <div>
+              <label htmlFor="login-username">Login</label>
+              <input
+                id="login-username"
+                type="text"
+                value={loginUsername}
+                onChange={(event) => setLoginUsername(event.target.value)}
+                minLength={3}
+                maxLength={30}
+                required
+                autoComplete="username"
+              />
+            </div>
+            <div style={{ marginTop: 8 }}>
+              <label htmlFor="login-password">Hasło</label>
+              <input
+                id="login-password"
+                type="password"
+                value={loginPassword}
+                onChange={(event) => setLoginPassword(event.target.value)}
+                minLength={8}
+                maxLength={100}
+                required
+                autoComplete="current-password"
+              />
+            </div>
+            <button type="submit" disabled={isLoggingIn} style={{ marginTop: 8 }}>
+              {isLoggingIn ? 'Logowanie...' : 'Zaloguj'}
+            </button>
+            {loginError && <p role="alert">{loginError}</p>}
+            {loginMessage && <p role="status">{loginMessage}</p>}
+          </form>
+        </div>
       </section>
 
       <div className="ticks"></div>
