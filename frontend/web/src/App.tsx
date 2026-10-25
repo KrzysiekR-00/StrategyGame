@@ -1,65 +1,88 @@
-import { useState } from 'react'
+﻿import { useMemo, useState } from 'react'
 import type { FormEvent } from 'react'
-import heroImg from './assets/hero.png'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
+import {
+  BrowserRouter,
+  Link,
+  Navigate,
+  Outlet,
+  Route,
+  Routes,
+  useNavigate,
+} from 'react-router-dom'
 import './App.css'
 
-function App() {
-  const [count, setCount] = useState(0)
-  const [apiResponse, setApiResponse] = useState<string | null>(null)
-  const [createdId, setCreatedId] = useState<number | null>(null)
+function getStoredToken() {
+  return localStorage.getItem('authToken')
+}
 
-  const [registerUsername, setRegisterUsername] = useState('')
-  const [registerPassword, setRegisterPassword] = useState('')
-  const [loginUsername, setLoginUsername] = useState('')
-  const [loginPassword, setLoginPassword] = useState('')
-  const [testText, setTestText] = useState('')
+function clearStoredToken() {
+  localStorage.removeItem('authToken')
+}
 
-  const [registrationMessage, setRegistrationMessage] = useState<string | null>(null)
-  const [registrationError, setRegistrationError] = useState<string | null>(null)
-  const [loginMessage, setLoginMessage] = useState<string | null>(null)
-  const [loginError, setLoginError] = useState<string | null>(null)
-  const [testMessage, setTestMessage] = useState<string | null>(null)
-  const [testError, setTestError] = useState<string | null>(null)
+function PublicLayout() {
+  return (
+    <div className="app-shell">
+      <header className="topbar">
+        <nav className="nav" aria-label="Menu główne">
+          <Link to="/">Strona główna</Link>
+          <Link to="/register">Rejestracja</Link>
+          <Link to="/login">Logowanie</Link>
+        </nav>
+      </header>
 
-  const [isRegistering, setIsRegistering] = useState(false)
-  const [isLoggingIn, setIsLoggingIn] = useState(false)
-  const [isCreatingTestRecord, setIsCreatingTestRecord] = useState(false)
+      <main className="page-content">
+        <Outlet />
+      </main>
+    </div>
+  )
+}
 
-  async function callGreeting() {
-    try {
-      const res = await fetch('/api/test/greeting')
-      if (!res.ok) throw new Error(`HTTP ${res.status}`)
-      const data = await res.json()
-      setApiResponse(data?.message ?? JSON.stringify(data))
-    } catch (err) {
-      setApiResponse(String(err))
-    }
-  }
+function HomePage() {
+  return (
+    <section className="card">
+      <h1>StrategyGame</h1>
+      <p className="lead">Witaj w aplikacji. Zarejestruj się albo zaloguj, aby przejść dalej.</p>
+      <div className="button-row">
+        <Link className="button primary" to="/register">
+          Rejestracja
+        </Link>
+        <Link className="button secondary" to="/login">
+          Logowanie
+        </Link>
+      </div>
+    </section>
+  )
+}
 
-  async function register(event: FormEvent<HTMLFormElement>) {
+function RegisterPage() {
+  const [username, setUsername] = useState('')
+  const [password, setPassword] = useState('')
+  const [message, setMessage] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    setRegistrationMessage(null)
-    setRegistrationError(null)
+    setMessage(null)
+    setError(null)
 
-    if (registerUsername.trim().length < 3) {
-      setRegistrationError('Login musi mieć co najmniej 3 znaki.')
+    if (username.trim().length < 3) {
+      setError('Login musi mieć co najmniej 3 znaki.')
       return
     }
 
-    if (registerPassword.length < 8) {
-      setRegistrationError('Hasło musi mieć co najmniej 8 znaków.')
+    if (password.length < 8) {
+      setError('Hasło musi mieć co najmniej 8 znaków.')
       return
     }
 
-    setIsRegistering(true)
+    setIsSubmitting(true)
 
     try {
       const response = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: registerUsername.trim(), password: registerPassword }),
+        body: JSON.stringify({ username: username.trim(), password }),
       })
 
       const data = await response.json().catch(() => null)
@@ -71,38 +94,87 @@ function App() {
         throw new Error(String(errors))
       }
 
-      setRegistrationMessage(data?.message ?? 'Rejestracja zakończona pomyślnie.')
-      setRegisterUsername('')
-      setRegisterPassword('')
-    } catch (error) {
-      setRegistrationError(error instanceof Error ? error.message : 'Wystąpił nieoczekiwany błąd.')
+      setMessage(data?.message ?? 'Rejestracja zakończona pomyślnie.')
+      setUsername('')
+      setPassword('')
+    } catch (caughtError) {
+      setError(caughtError instanceof Error ? caughtError.message : 'Wystąpił nieoczekiwany błąd.')
     } finally {
-      setIsRegistering(false)
+      setIsSubmitting(false)
     }
   }
 
-  async function login(event: FormEvent<HTMLFormElement>) {
+  return (
+    <section className="card form-card">
+      <h2>Rejestracja</h2>
+      <form onSubmit={handleSubmit} className="auth-form">
+        <label>
+          <span>Login</span>
+          <input
+            type="text"
+            value={username}
+            onChange={(event) => setUsername(event.target.value)}
+            minLength={3}
+            maxLength={30}
+            required
+            autoComplete="username"
+          />
+        </label>
+
+        <label>
+          <span>Hasło</span>
+          <input
+            type="password"
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            minLength={8}
+            maxLength={100}
+            required
+            autoComplete="new-password"
+          />
+        </label>
+
+        <button type="submit" disabled={isSubmitting} className="button primary">
+          {isSubmitting ? 'Rejestracja...' : 'Zarejestruj'}
+        </button>
+      </form>
+
+      {error && <p className="alert error" role="alert">{error}</p>}
+      {message && <p className="alert success" role="status">{message}</p>}
+    </section>
+  )
+}
+
+function LoginPage({ onLoginSuccess }: { onLoginSuccess: (token: string) => void }) {
+  const navigate = useNavigate()
+  const [username, setUsername] = useState('')
+  const [password, setPassword] = useState('')
+  const [message, setMessage] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    setLoginMessage(null)
-    setLoginError(null)
+    setMessage(null)
+    setError(null)
 
-    if (loginUsername.trim().length < 3) {
-      setLoginError('Login musi mieć co najmniej 3 znaki.')
+    if (username.trim().length < 3) {
+      setError('Login musi mieć co najmniej 3 znaki.')
       return
     }
 
-    if (loginPassword.length < 8) {
-      setLoginError('Hasło musi mieć co najmniej 8 znaków.')
+    if (password.length < 8) {
+      setError('Hasło musi mieć co najmniej 8 znaków.')
       return
     }
 
-    setIsLoggingIn(true)
+    setIsSubmitting(true)
 
     try {
       const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: loginUsername.trim(), password: loginPassword }),
+        body: JSON.stringify({ username: username.trim(), password }),
       })
 
       const data = await response.json().catch(() => null)
@@ -113,281 +185,203 @@ function App() {
       }
 
       if (data?.token) {
-        localStorage.setItem('authToken', data.token)
+        onLoginSuccess(data.token)
       }
 
-      setLoginMessage(data?.message ?? 'Zalogowano pomyślnie.')
-      setLoginUsername('')
-      setLoginPassword('')
-    } catch (error) {
-      setLoginError(error instanceof Error ? error.message : 'Wystąpił nieoczekiwany błąd.')
+      setMessage(data?.message ?? 'Zalogowano pomyślnie.')
+      setUsername('')
+      setPassword('')
+      navigate('/protected', { replace: true })
+    } catch (caughtError) {
+      setError(caughtError instanceof Error ? caughtError.message : 'Wystąpił nieoczekiwany błąd.')
     } finally {
-      setIsLoggingIn(false)
+      setIsSubmitting(false)
     }
   }
 
-  async function createTestRecord(event: FormEvent<HTMLFormElement>) {
+  return (
+    <section className="card form-card">
+      <h2>Logowanie</h2>
+      <form onSubmit={handleSubmit} className="auth-form">
+        <label>
+          <span>Login</span>
+          <input
+            type="text"
+            value={username}
+            onChange={(event) => setUsername(event.target.value)}
+            minLength={3}
+            maxLength={30}
+            required
+            autoComplete="username"
+          />
+        </label>
+
+        <label>
+          <span>Hasło</span>
+          <input
+            type="password"
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            minLength={8}
+            maxLength={100}
+            required
+            autoComplete="current-password"
+          />
+        </label>
+
+        <button type="submit" disabled={isSubmitting} className="button primary">
+          {isSubmitting ? 'Logowanie...' : 'Zaloguj'}
+        </button>
+      </form>
+
+      {error && <p className="alert error" role="alert">{error}</p>}
+      {message && <p className="alert success" role="status">{message}</p>}
+    </section>
+  )
+}
+
+function ProtectedPage({ onLogout }: { onLogout: () => void }) {
+  const navigate = useNavigate()
+  const [text, setText] = useState('')
+  const [message, setMessage] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [createdId, setCreatedId] = useState<number | null>(null)
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    setTestMessage(null)
-    setTestError(null)
+    setMessage(null)
+    setError(null)
 
-    const token = localStorage.getItem('authToken')
+    const token = getStoredToken()
     if (!token) {
-      setTestError('Musisz być zalogowany, aby dodać rekord.')
+      onLogout()
+      navigate('/login', { replace: true })
       return
     }
 
-    if (testText.trim().length < 1) {
-      setTestError('Tekst nie może być pusty.')
+    if (text.trim().length < 1) {
+      setError('Tekst nie może być pusty.')
       return
     }
 
-    setIsCreatingTestRecord(true)
+    setIsSubmitting(true)
 
     try {
-      const res = await fetch('/api/testdb/create', {
+      const response = await fetch('/api/testdb/create', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ text: testText.trim() }),
+        body: JSON.stringify({ text: text.trim() }),
       })
 
-      const data = await res.json().catch(() => null)
+      const data = await response.json().catch(() => null)
 
-      if (!res.ok) {
-        const message = data?.message ?? 'Nie udało się dodać rekordu.'
-        throw new Error(String(message))
+      if (response.status === 401 || response.status === 403) {
+        clearStoredToken()
+        onLogout()
+        navigate('/login', { replace: true })
+        throw new Error('Sesja wygasła. Zaloguj się ponownie.')
+      }
+
+      if (!response.ok) {
+        throw new Error(data?.message ?? 'Nie udało się dodać rekordu.')
       }
 
       setCreatedId(data?.id ?? null)
-      setTestMessage(data?.message ?? 'Rekord dodany pomyślnie.')
-      setTestText('')
-    } catch (error) {
-      setTestError(error instanceof Error ? error.message : 'Wystąpił nieoczekiwany błąd.')
+      setMessage(data?.message ?? 'Rekord dodany pomyślnie.')
+      setText('')
+    } catch (caughtError) {
+      setError(caughtError instanceof Error ? caughtError.message : 'Wystąpił nieoczekiwany błąd.')
     } finally {
-      setIsCreatingTestRecord(false)
+      setIsSubmitting(false)
     }
   }
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
+    <section className="card form-card protected-card">
+      <div className="page-header">
+        <h2>Dodaj testowy rekord</h2>
         <button
           type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
+          className="button secondary"
+          onClick={() => {
+            clearStoredToken()
+            onLogout()
+            navigate('/login', { replace: true })
+          }}
         >
-          Count is {count}
+          Wyloguj
         </button>
-        <div style={{ marginTop: 12 }}>
-          <button type="button" onClick={callGreeting}>
-            Call API: Greeting
-          </button>
-          {apiResponse && (
-            <div style={{ marginTop: 8 }}>
-              <strong>API:</strong> <span>{apiResponse}</span>
-            </div>
-          )}
-          {createdId !== null && (
-            <div style={{ marginTop: 8 }}>
-              <strong>Created record id:</strong> <span>{createdId}</span>
-            </div>
-          )}
-        </div>
+      </div>
 
-        <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap', marginTop: 24 }}>
-          <form onSubmit={register} style={{ minWidth: 260 }}>
-            <h2>Rejestracja</h2>
-            <div>
-              <label htmlFor="register-username">Login</label>
-              <input
-                id="register-username"
-                type="text"
-                value={registerUsername}
-                onChange={(event) => setRegisterUsername(event.target.value)}
-                minLength={3}
-                maxLength={30}
-                required
-                autoComplete="username"
-              />
-            </div>
-            <div style={{ marginTop: 8 }}>
-              <label htmlFor="register-password">Hasło</label>
-              <input
-                id="register-password"
-                type="password"
-                value={registerPassword}
-                onChange={(event) => setRegisterPassword(event.target.value)}
-                minLength={8}
-                maxLength={100}
-                required
-                autoComplete="new-password"
-              />
-            </div>
-            <button type="submit" disabled={isRegistering} style={{ marginTop: 8 }}>
-              {isRegistering ? 'Rejestracja...' : 'Zarejestruj'}
-            </button>
-            {registrationError && <p role="alert">{registrationError}</p>}
-            {registrationMessage && <p role="status">{registrationMessage}</p>}
-          </form>
+      <form onSubmit={handleSubmit} className="auth-form">
+        <label>
+          <span>Tekst</span>
+          <input
+            type="text"
+            value={text}
+            onChange={(event) => setText(event.target.value)}
+            maxLength={500}
+            required
+            placeholder="Wpisz tekst rekordu"
+          />
+        </label>
 
-          <form onSubmit={login} style={{ minWidth: 260 }}>
-            <h2>Logowanie</h2>
-            <div>
-              <label htmlFor="login-username">Login</label>
-              <input
-                id="login-username"
-                type="text"
-                value={loginUsername}
-                onChange={(event) => setLoginUsername(event.target.value)}
-                minLength={3}
-                maxLength={30}
-                required
-                autoComplete="username"
-              />
-            </div>
-            <div style={{ marginTop: 8 }}>
-              <label htmlFor="login-password">Hasło</label>
-              <input
-                id="login-password"
-                type="password"
-                value={loginPassword}
-                onChange={(event) => setLoginPassword(event.target.value)}
-                minLength={8}
-                maxLength={100}
-                required
-                autoComplete="current-password"
-              />
-            </div>
-            <button type="submit" disabled={isLoggingIn} style={{ marginTop: 8 }}>
-              {isLoggingIn ? 'Logowanie...' : 'Zaloguj'}
-            </button>
-            {loginError && <p role="alert">{loginError}</p>}
-            {loginMessage && <p role="status">{loginMessage}</p>}
-          </form>
+        <button type="submit" disabled={isSubmitting} className="button primary">
+          {isSubmitting ? 'Dodawanie...' : 'Dodaj rekord'}
+        </button>
+      </form>
 
-          <form onSubmit={createTestRecord} style={{ minWidth: 260 }}>
-            <h2>Dodaj testowy rekord</h2>
-            <div>
-              <label htmlFor="test-text">Tekst</label>
-              <input
-                id="test-text"
-                type="text"
-                value={testText}
-                onChange={(event) => setTestText(event.target.value)}
-                maxLength={500}
-                required
-                placeholder="Wpisz tekst rekordu"
-              />
-            </div>
-            <button type="submit" disabled={isCreatingTestRecord} style={{ marginTop: 8 }}>
-              {isCreatingTestRecord ? 'Dodawanie...' : 'Dodaj rekord'}
-            </button>
-            {testError && <p role="alert">{testError}</p>}
-            {testMessage && <p role="status">{testMessage}</p>}
-          </form>
-        </div>
-      </section>
+      {error && <p className="alert error" role="alert">{error}</p>}
+      {message && <p className="alert success" role="status">{message}</p>}
+      {createdId !== null && <p className="created-id">Utworzono rekord o id: {createdId}</p>}
+    </section>
+  )
+}
 
-      <div className="ticks"></div>
+function App() {
+  const [token, setToken] = useState<string | null>(() => getStoredToken())
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
+  const isAuthenticated = useMemo(() => Boolean(token), [token])
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
+  const handleLoginSuccess = (newToken: string) => {
+    localStorage.setItem('authToken', newToken)
+    setToken(newToken)
+  }
+
+  const handleLogout = () => {
+    clearStoredToken()
+    setToken(null)
+  }
+
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route element={<PublicLayout />}>
+          <Route path="/" element={<HomePage />} />
+          <Route
+            path="/register"
+            element={isAuthenticated ? <Navigate to="/protected" replace /> : <RegisterPage />}
+          />
+          <Route
+            path="/login"
+            element={
+              isAuthenticated ? <Navigate to="/protected" replace /> : <LoginPage onLoginSuccess={handleLoginSuccess} />
+            }
+          />
+        </Route>
+
+        <Route
+          path="/protected"
+          element={isAuthenticated ? <ProtectedPage onLogout={handleLogout} /> : <Navigate to="/login" replace />}
+        />
+
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </BrowserRouter>
   )
 }
 
