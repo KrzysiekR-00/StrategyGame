@@ -8,7 +8,7 @@ using api.Data;
 
 #nullable disable
 
-namespace api.Database.Migrations
+namespace api.Migrations
 {
     [DbContext(typeof(AppDbContext))]
     [Migration("20261021183126_AddIdentity")]
