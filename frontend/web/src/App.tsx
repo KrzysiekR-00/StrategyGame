@@ -14,14 +14,18 @@ function App() {
   const [registerPassword, setRegisterPassword] = useState('')
   const [loginUsername, setLoginUsername] = useState('')
   const [loginPassword, setLoginPassword] = useState('')
+  const [testText, setTestText] = useState('')
 
   const [registrationMessage, setRegistrationMessage] = useState<string | null>(null)
   const [registrationError, setRegistrationError] = useState<string | null>(null)
   const [loginMessage, setLoginMessage] = useState<string | null>(null)
   const [loginError, setLoginError] = useState<string | null>(null)
+  const [testMessage, setTestMessage] = useState<string | null>(null)
+  const [testError, setTestError] = useState<string | null>(null)
 
   const [isRegistering, setIsRegistering] = useState(false)
   const [isLoggingIn, setIsLoggingIn] = useState(false)
+  const [isCreatingTestRecord, setIsCreatingTestRecord] = useState(false)
 
   async function callGreeting() {
     try {
@@ -122,14 +126,48 @@ function App() {
     }
   }
 
-  async function createTestRecord() {
+  async function createTestRecord(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    setTestMessage(null)
+    setTestError(null)
+
+    const token = localStorage.getItem('authToken')
+    if (!token) {
+      setTestError('Musisz być zalogowany, aby dodać rekord.')
+      return
+    }
+
+    if (testText.trim().length < 1) {
+      setTestError('Tekst nie może być pusty.')
+      return
+    }
+
+    setIsCreatingTestRecord(true)
+
     try {
-      const res = await fetch('/api/testdb/create')
-      if (!res.ok) throw new Error(`HTTP ${res.status}`)
-      const data = await res.json()
+      const res = await fetch('/api/testdb/create', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ text: testText.trim() }),
+      })
+
+      const data = await res.json().catch(() => null)
+
+      if (!res.ok) {
+        const message = data?.message ?? 'Nie udało się dodać rekordu.'
+        throw new Error(String(message))
+      }
+
       setCreatedId(data?.id ?? null)
-    } catch (err) {
-      setApiResponse(String(err))
+      setTestMessage(data?.message ?? 'Rekord dodany pomyślnie.')
+      setTestText('')
+    } catch (error) {
+      setTestError(error instanceof Error ? error.message : 'Wystąpił nieoczekiwany błąd.')
+    } finally {
+      setIsCreatingTestRecord(false)
     }
   }
 
@@ -157,9 +195,6 @@ function App() {
         <div style={{ marginTop: 12 }}>
           <button type="button" onClick={callGreeting}>
             Call API: Greeting
-          </button>
-          <button style={{ marginLeft: 8 }} type="button" onClick={createTestRecord}>
-            Create test record
           </button>
           {apiResponse && (
             <div style={{ marginTop: 8 }}>
@@ -242,6 +277,27 @@ function App() {
             </button>
             {loginError && <p role="alert">{loginError}</p>}
             {loginMessage && <p role="status">{loginMessage}</p>}
+          </form>
+
+          <form onSubmit={createTestRecord} style={{ minWidth: 260 }}>
+            <h2>Dodaj testowy rekord</h2>
+            <div>
+              <label htmlFor="test-text">Tekst</label>
+              <input
+                id="test-text"
+                type="text"
+                value={testText}
+                onChange={(event) => setTestText(event.target.value)}
+                maxLength={500}
+                required
+                placeholder="Wpisz tekst rekordu"
+              />
+            </div>
+            <button type="submit" disabled={isCreatingTestRecord} style={{ marginTop: 8 }}>
+              {isCreatingTestRecord ? 'Dodawanie...' : 'Dodaj rekord'}
+            </button>
+            {testError && <p role="alert">{testError}</p>}
+            {testMessage && <p role="status">{testMessage}</p>}
           </form>
         </div>
       </section>
