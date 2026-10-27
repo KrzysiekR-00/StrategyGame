@@ -1,4 +1,4 @@
-using System.Security.Claims;
+﻿using System.Security.Claims;
 using api.Data;
 using api.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -19,7 +19,7 @@ public class TestDbController : ControllerBase
         _db = db;
     }
 
-    [HttpGet("mine")]
+    [HttpGet("me")]
     public async Task<ActionResult<object>> GetMyRecords()
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)
@@ -50,7 +50,7 @@ public class TestDbController : ControllerBase
         return Ok(new { items = records });
     }
 
-    [HttpPost("create")]
+    [HttpPost]
     public async Task<ActionResult<object>> Create([FromBody] CreateTestRecordRequest request)
     {
         if (!ModelState.IsValid)

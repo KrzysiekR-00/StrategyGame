@@ -1,7 +1,8 @@
 ﻿import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { clearStoredToken, getStoredToken } from '../auth/tokenStorage'
+import { apiRequest } from '../api/client'
+import { clearStoredToken } from '../auth/tokenStorage'
 
 type ProtectedPageProps = {
   onLogout: () => void
@@ -32,30 +33,12 @@ export function ProtectedPage({ onLogout }: ProtectedPageProps) {
   }
 
   async function loadRecords() {
-    const token = getStoredToken()
-    if (!token) {
-      redirectToLogin()
-      return
-    }
-
     try {
-      const response = await fetch('/api/testdb/mine', {
+      const data = await apiRequest<{ items?: Partial<TestRecordItem>[] }>('/api/testdb/me', {
         method: 'GET',
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        auth: true,
+        onUnauthorized: redirectToLogin,
       })
-
-      if (response.status === 401 || response.status === 403) {
-        redirectToLogin()
-        return
-      }
-
-      const data = await response.json().catch(() => null)
-
-      if (!response.ok) {
-        throw new Error(data?.message ?? 'Nie udało się pobrać rekordów.')
-      }
 
       const nextRecords = Array.isArray(data?.items)
         ? data.items.map((record: Partial<TestRecordItem>) => ({
@@ -84,12 +67,6 @@ export function ProtectedPage({ onLogout }: ProtectedPageProps) {
     setMessage(null)
     setError(null)
 
-    const token = getStoredToken()
-    if (!token) {
-      redirectToLogin()
-      return
-    }
-
     if (text.trim().length < 1) {
       setError('Tekst nie może być pusty.')
       return
@@ -98,25 +75,15 @@ export function ProtectedPage({ onLogout }: ProtectedPageProps) {
     setIsSubmitting(true)
 
     try {
-      const response = await fetch('/api/testdb/create', {
+      const data = await apiRequest<{ id?: number; message?: string }>('/api/testdb', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({ text: text.trim() }),
+        auth: true,
+        onUnauthorized: redirectToLogin,
       })
-
-      const data = await response.json().catch(() => null)
-
-      if (response.status === 401 || response.status === 403) {
-        redirectToLogin()
-        throw new Error('Sesja wygasła. Zaloguj się ponownie.')
-      }
-
-      if (!response.ok) {
-        throw new Error(data?.message ?? 'Nie udało się dodać rekordu.')
-      }
 
       setCreatedId(data?.id ?? null)
       setMessage(data?.message ?? 'Rekord dodany pomyślnie.')
