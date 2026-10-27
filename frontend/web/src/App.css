@@ -152,6 +152,53 @@ h2 {
   font-weight: 600;
 }
 
+.list-card {
+  max-width: 960px;
+  width: 100%;
+}
+
+.table-wrapper {
+  overflow-x: auto;
+  margin-top: 16px;
+}
+
+.records-table {
+  width: 100%;
+  border-collapse: collapse;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.records-table th,
+.records-table td {
+  text-align: left;
+  padding: 12px 14px;
+  border-bottom: 1px solid #e5e7eb;
+  vertical-align: top;
+}
+
+.records-table th {
+  background: #f8fafc;
+  color: #111827;
+  font-weight: 700;
+}
+
+.records-table tbody tr:nth-child(even) {
+  background: #f8fafc;
+}
+
+.record-text {
+  max-width: 420px;
+  word-break: break-word;
+}
+
+.empty-state {
+  margin-top: 16px;
+  color: #4b5563;
+  font-style: italic;
+}
+
 @media (max-width: 640px) {
   .page-content {
     padding: 20px 16px 48px;

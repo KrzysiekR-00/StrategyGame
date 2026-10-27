@@ -3,6 +3,7 @@ using api.Data;
 using api.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace api.Controllers;
 
@@ -16,6 +17,37 @@ public class TestDbController : ControllerBase
     public TestDbController(AppDbContext db)
     {
         _db = db;
+    }
+
+    [HttpGet("mine")]
+    public async Task<ActionResult<object>> GetMyRecords()
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)
+            ?? User.FindFirstValue("sub");
+
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            return Unauthorized(new { message = "Brak praw do wykonania tej operacji." });
+        }
+
+        var records = await _db.TestRecords
+            .Where(record => record.CreatedByUserId == userId)
+            .Join(
+                _db.Users,
+                record => record.CreatedByUserId,
+                user => user.Id,
+                (record, user) => new
+                {
+                    id = record.Id,
+                    text = record.Text,
+                    createdByUserId = record.CreatedByUserId,
+                    createdByUsername = user.UserName ?? string.Empty,
+                    createdAt = record.CreatedAt
+                })
+            .OrderByDescending(record => record.createdAt)
+            .ToListAsync();
+
+        return Ok(new { items = records });
     }
 
     [HttpPost("create")]
@@ -50,12 +82,16 @@ public class TestDbController : ControllerBase
         _db.TestRecords.Add(rec);
         await _db.SaveChangesAsync();
 
+        var user = await _db.Users.FindAsync(userId);
+
         return Ok(new
         {
             id = rec.Id,
             message = "Rekord dodany pomyślnie.",
             text = rec.Text,
-            createdByUserId = rec.CreatedByUserId
+            createdByUserId = rec.CreatedByUserId,
+            createdByUsername = user?.UserName ?? string.Empty,
+            createdAt = rec.CreatedAt
         });
     }
 }

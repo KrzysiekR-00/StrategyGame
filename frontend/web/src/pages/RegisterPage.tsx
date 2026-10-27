@@ -4,6 +4,7 @@ import type { FormEvent } from 'react'
 export function RegisterPage() {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -23,13 +24,18 @@ export function RegisterPage() {
       return
     }
 
+    if (password !== confirmPassword) {
+      setError('Hasła muszą być takie same.')
+      return
+    }
+
     setIsSubmitting(true)
 
     try {
       const response = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: username.trim(), password }),
+        body: JSON.stringify({ username: username.trim(), password, confirmPassword }),
       })
 
       const data = await response.json().catch(() => null)
@@ -44,6 +50,7 @@ export function RegisterPage() {
       setMessage(data?.message ?? 'Rejestracja zakończona pomyślnie.')
       setUsername('')
       setPassword('')
+      setConfirmPassword('')
     } catch (caughtError) {
       setError(caughtError instanceof Error ? caughtError.message : 'Wystąpił nieoczekiwany błąd.')
     } finally {
@@ -74,6 +81,19 @@ export function RegisterPage() {
             type="password"
             value={password}
             onChange={(event) => setPassword(event.target.value)}
+            minLength={8}
+            maxLength={100}
+            required
+            autoComplete="new-password"
+          />
+        </label>
+
+        <label>
+          <span>Powtórz hasło</span>
+          <input
+            type="password"
+            value={confirmPassword}
+            onChange={(event) => setConfirmPassword(event.target.value)}
             minLength={8}
             maxLength={100}
             required
