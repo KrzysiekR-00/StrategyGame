@@ -1,6 +1,7 @@
 ﻿import { useMemo, useState } from 'react'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { clearStoredToken, getStoredToken } from './auth/tokenStorage'
+import { ProtectedLayout } from './components/ProtectedLayout'
 import { PublicLayout } from './components/PublicLayout'
 import { HomePage } from './pages/HomePage'
 import { LoginPage } from './pages/LoginPage'
@@ -41,8 +42,10 @@ function App() {
 
         <Route
           path="/protected"
-          element={isAuthenticated ? <ProtectedPage onLogout={handleLogout} /> : <Navigate to="/login" replace />}
-        />
+          element={isAuthenticated ? <ProtectedLayout onLogout={handleLogout} /> : <Navigate to="/login" replace />}
+        >
+          <Route index element={<ProtectedPage />} />
+        </Route>
 
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

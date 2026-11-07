@@ -4,10 +4,6 @@ import { useNavigate } from 'react-router-dom'
 import { apiRequest } from '../api/client'
 import { clearStoredToken } from '../auth/tokenStorage'
 
-type ProtectedPageProps = {
-  onLogout: () => void
-}
-
 type TestRecordItem = {
   id: number
   text: string
@@ -16,7 +12,7 @@ type TestRecordItem = {
   createdAt: string
 }
 
-export function ProtectedPage({ onLogout }: ProtectedPageProps) {
+export function ProtectedPage() {
   const navigate = useNavigate()
   const [text, setText] = useState('')
   const [message, setMessage] = useState<string | null>(null)
@@ -28,7 +24,6 @@ export function ProtectedPage({ onLogout }: ProtectedPageProps) {
 
   function redirectToLogin() {
     clearStoredToken()
-    onLogout()
     navigate('/login', { replace: true })
   }
 
@@ -96,12 +91,6 @@ export function ProtectedPage({ onLogout }: ProtectedPageProps) {
     }
   }
 
-  function handleLogoutClick() {
-    clearStoredToken()
-    onLogout()
-    navigate('/login', { replace: true })
-  }
-
   function formatDate(value: string) {
     const date = new Date(value)
     if (Number.isNaN(date.getTime())) {
@@ -119,9 +108,6 @@ export function ProtectedPage({ onLogout }: ProtectedPageProps) {
       <section className="card form-card protected-card">
         <div className="page-header">
           <h2>Dodaj testowy rekord</h2>
-          <button type="button" className="button secondary" onClick={handleLogoutClick}>
-            Wyloguj
-          </button>
         </div>
 
         <form onSubmit={handleSubmit} className="auth-form">

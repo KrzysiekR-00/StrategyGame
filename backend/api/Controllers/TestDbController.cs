@@ -1,9 +1,9 @@
-﻿using System.Security.Claims;
-using api.Data;
+﻿using api.Data;
 using api.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 namespace api.Controllers;
 
