@@ -7,6 +7,7 @@ import { HomePage } from './pages/HomePage'
 import { LoginPage } from './pages/LoginPage'
 import { ProtectedPage } from './pages/ProtectedPage'
 import { RegisterPage } from './pages/RegisterPage'
+import { SettlementsPage } from './pages/SettlementsPage'
 import './App.css'
 
 function App() {
@@ -45,6 +46,7 @@ function App() {
           element={isAuthenticated ? <ProtectedLayout onLogout={handleLogout} /> : <Navigate to="/login" replace />}
         >
           <Route index element={<ProtectedPage />} />
+          <Route path="settlements" element={<SettlementsPage />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/" replace />} />

@@ -57,6 +57,7 @@ export function ProtectedLayout({ onLogout }: ProtectedLayoutProps) {
       <header className="topbar">
         <nav className="nav" aria-label="Menu chronione">
           <Link to="/protected">Strona chroniona</Link>
+          <Link to="/protected/settlements">Osady</Link>
           <span className="user-badge">{userLabel}</span>
           <div className="nav-actions">
             <button

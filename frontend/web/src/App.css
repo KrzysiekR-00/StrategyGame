@@ -206,6 +206,10 @@ h2 {
   background: #f8fafc;
 }
 
+.settlement-card {
+  max-width: 560px;
+}
+
 .record-text {
   max-width: 420px;
   word-break: break-word;

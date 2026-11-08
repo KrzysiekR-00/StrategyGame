@@ -1,6 +1,7 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using api.Data;
 using api.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -14,15 +15,18 @@ public class AuthController : ControllerBase
 {
     private readonly UserManager<IdentityUser> _userManager;
     private readonly SignInManager<IdentityUser> _signInManager;
+    private readonly AppDbContext _db;
     private readonly IConfiguration _configuration;
 
     public AuthController(
         UserManager<IdentityUser> userManager,
         SignInManager<IdentityUser> signInManager,
+        AppDbContext db,
         IConfiguration configuration)
     {
         _userManager = userManager;
         _signInManager = signInManager;
+        _db = db;
         _configuration = configuration;
     }
 
@@ -51,6 +55,17 @@ public class AuthController : ControllerBase
 
             return ValidationProblem(ModelState);
         }
+
+        var starterSettlement = new Settlement
+        {
+            Name = "Osada 1",
+            OwnerUserId = user.Id,
+            FoundedAt = DateTime.UtcNow,
+            Level = 1,
+        };
+
+        _db.Settlements.Add(starterSettlement);
+        await _db.SaveChangesAsync();
 
         return StatusCode(StatusCodes.Status201Created, new
         {
