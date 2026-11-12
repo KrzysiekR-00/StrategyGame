@@ -1,12 +1,18 @@
 import { useEffect, useState } from 'react'
-import type { FormEvent } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { apiRequest } from '../api/client'
 import { clearStoredToken } from '../auth/tokenStorage'
 
+type ResourceInfo = {
+  resourceCode: string
+  quantity: number
+}
+
 type BuildingDefinition = {
   code: string
   name: string
+  inputResources: ResourceInfo[]
+  outputResources: ResourceInfo[]
 }
 
 type BuiltBuilding = {
@@ -32,7 +38,6 @@ export function SettlementDetailsPage() {
   const navigate = useNavigate()
   const [settlement, setSettlement] = useState<SettlementDetails | null>(null)
   const [definitions, setDefinitions] = useState<BuildingDefinition[]>([])
-  const [selectedBuildingType, setSelectedBuildingType] = useState('')
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
@@ -66,7 +71,6 @@ export function SettlementDetailsPage() {
 
       setSettlement(settlementData)
       setDefinitions(definitionsData)
-      setSelectedBuildingType(definitionsData[0]?.code ?? '')
     } catch (caughtError) {
       setError(caughtError instanceof Error ? caughtError.message : 'Wystąpił nieoczekiwany błąd.')
     } finally {
@@ -78,33 +82,31 @@ export function SettlementDetailsPage() {
     void loadSettlement()
   }, [settlementId])
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    setMessage(null)
-    setError(null)
-
-    if (!settlementId || !selectedBuildingType) {
-      setError('Wybierz typ budynku.')
+  async function handleBuild(buildingType: string) {
+    if (!settlementId) {
+      setError('Brak identyfikatora osady.')
       return
     }
 
+    setMessage(null)
+    setError(null)
     setIsSubmitting(true)
 
     try {
-      const data = await apiRequest<{ message?: string; availableSlots?: number }>(`/api/building`, {
+      const data = await apiRequest<{ message?: string }>(`/api/building`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           settlementId: Number(settlementId),
-          buildingType: selectedBuildingType,
+          buildingType,
         }),
         auth: true,
         onUnauthorized: redirectToLogin,
       })
 
-      setMessage(data?.message ?? 'Budynk został wybudowany.')
+      setMessage(data?.message ?? 'Budynek został wybudowany.')
       await loadSettlement()
     } catch (caughtError) {
       setError(caughtError instanceof Error ? caughtError.message : 'Wystąpił nieoczekiwany błąd.')
@@ -126,6 +128,16 @@ export function SettlementDetailsPage() {
   }
 
   const hasAvailableSlots = (settlement?.availableSlots ?? 0) > 0
+
+  function formatResourceList(resources: ResourceInfo[] | undefined) {
+    if (!resources || resources.length === 0) {
+      return 'Brak'
+    }
+
+    return resources
+      .map((resource) => `${resource.quantity} ${resource.resourceCode}`)
+      .join(', ')
+  }
 
   return (
     <section className="card list-card">
@@ -174,30 +186,45 @@ export function SettlementDetailsPage() {
             )}
           </div>
 
-          <form onSubmit={handleSubmit} className="auth-form building-form">
-            <label>
-              <span>Typ budynku</span>
-              <select
-                value={selectedBuildingType}
-                onChange={(event) => setSelectedBuildingType(event.target.value)}
-                disabled={!hasAvailableSlots || definitions.length === 0}
-              >
-                {definitions.length === 0 ? (
-                  <option value="">Brak dostępnych budynków</option>
-                ) : (
-                  definitions.map((building) => (
-                    <option key={building.code} value={building.code}>
-                      {building.name}
-                    </option>
-                  ))
-                )}
-              </select>
-            </label>
+          <div className="building-construction-panel">
+            <h3>Budowanie</h3>
 
-            <button type="submit" className="button primary" disabled={isSubmitting || !hasAvailableSlots || definitions.length === 0}>
-              {isSubmitting ? 'Budowanie...' : 'Wybuduj budynek'}
-            </button>
-          </form>
+            {definitions.length === 0 ? (
+              <p className="empty-state">Brak dostępnych budynków do wybudowania.</p>
+            ) : (
+              <div className="building-cards">
+                {definitions.map((building) => {
+                  const isDisabled = isSubmitting || !hasAvailableSlots
+
+                  return (
+                    <div key={building.code} className="building-card">
+                      <div className="building-card-header">
+                        <h4>{building.name}</h4>
+                      </div>
+
+                      <div className="building-card-meta">
+                        <p>
+                          <strong>Konsumuje:</strong> {formatResourceList(building.inputResources)}
+                        </p>
+                        <p>
+                          <strong>Produkuje:</strong> {formatResourceList(building.outputResources)}
+                        </p>
+                      </div>
+
+                      <button
+                        type="button"
+                        className="button primary"
+                        onClick={() => void handleBuild(building.code)}
+                        disabled={isDisabled}
+                      >
+                        {isSubmitting ? 'Budowanie...' : 'Wybuduj'}
+                      </button>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </div>
 
           {message && <p className="alert success" role="status">{message}</p>}
           {!hasAvailableSlots && <p className="alert error">Brak wolnych slotów w tej osadzie.</p>}
