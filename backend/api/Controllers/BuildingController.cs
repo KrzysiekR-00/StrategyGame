@@ -1,9 +1,9 @@
-using System.Security.Claims;
 using api.Data;
 using api.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 namespace api.Controllers;
 
@@ -87,6 +87,36 @@ public class BuildingController : ControllerBase
         });
     }
 
+    [HttpDelete("{id:int}")]
+    public async Task<ActionResult<object>> Destroy(int id)
+    {
+        var userId = GetCurrentUserId();
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            return Unauthorized(new { message = "Brak danych użytkownika w tokenie." });
+        }
+
+        var building = await _db.SettlementBuildings
+            .Include(item => item.Settlement)
+            .FirstOrDefaultAsync(item => item.Id == id && item.Settlement != null && item.Settlement.OwnerUserId == userId);
+
+        if (building is null)
+        {
+            return NotFound(new { message = "Nie znaleziono budynku w twojej osadzie." });
+        }
+
+        var buildingType = building.BuildingType;
+        _db.SettlementBuildings.Remove(building);
+        await _db.SaveChangesAsync();
+
+        return Ok(new
+        {
+            id,
+            buildingType,
+            message = "Budynek został zburzony.",
+        });
+    }
+
     [HttpPost]
     public async Task<ActionResult<object>> Build([FromBody] BuildSettlementBuildingRequest request)
     {
@@ -153,7 +183,7 @@ public class BuildingController : ControllerBase
             buildingType = createdBuilding.BuildingType,
             name = buildingDefinition.Name,
             builtAt = createdBuilding.BuiltAt,
-            message = "Budynk został wybudowany.",
+            message = "Budynek został wybudowany.",
             maxSlots,
             occupiedSlots = occupiedSlots + 1,
             availableSlots = maxSlots - (occupiedSlots + 1),

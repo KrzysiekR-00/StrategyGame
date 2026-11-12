@@ -115,6 +115,27 @@ export function SettlementDetailsPage() {
     }
   }
 
+  async function handleDestroy(buildingId: number) {
+    setMessage(null)
+    setError(null)
+    setIsSubmitting(true)
+
+    try {
+      const data = await apiRequest<{ message?: string }>(`/api/building/${buildingId}`, {
+        method: 'DELETE',
+        auth: true,
+        onUnauthorized: redirectToLogin,
+      })
+
+      setMessage(data?.message ?? 'Budynek został zburzony.')
+      await loadSettlement()
+    } catch (caughtError) {
+      setError(caughtError instanceof Error ? caughtError.message : 'Wystąpił nieoczekiwany błąd.')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
   function formatDate(value: string) {
     const date = new Date(value)
     if (Number.isNaN(date.getTime())) {
@@ -178,8 +199,19 @@ export function SettlementDetailsPage() {
               <ul className="building-list">
                 {settlement.buildings.map((building) => (
                   <li key={building.id} className="building-item">
-                    <span>{building.name}</span>
-                    <small>{formatDate(building.builtAt)}</small>
+                    <div className="building-item-details">
+                      <span>{building.name}</span>
+                      <small>{formatDate(building.builtAt)}</small>
+                    </div>
+
+                    <button
+                      type="button"
+                      className="button secondary compact-button"
+                      onClick={() => void handleDestroy(building.id)}
+                      disabled={isSubmitting}
+                    >
+                      Zburz
+                    </button>
                   </li>
                 ))}
               </ul>

@@ -154,6 +154,12 @@ h2 {
   background: #f8fafc;
 }
 
+.building-item-details {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
 .building-item small {
   color: #6b7280;
 }
