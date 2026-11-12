@@ -121,6 +121,11 @@ h2 {
   border-color: #dbe2ff;
 }
 
+.compact-button {
+  padding: 8px 12px;
+  font-size: 0.9rem;
+}
+
 .auth-form {
   display: flex;
   flex-direction: column;
@@ -219,6 +224,14 @@ h2 {
   margin-top: 16px;
   color: #4b5563;
   font-style: italic;
+}
+
+.settlement-details {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 16px;
+  font-size: 1.05rem;
 }
 
 @media (max-width: 640px) {

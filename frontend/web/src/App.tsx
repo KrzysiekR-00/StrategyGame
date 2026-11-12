@@ -7,6 +7,7 @@ import { HomePage } from './pages/HomePage'
 import { LoginPage } from './pages/LoginPage'
 import { ProtectedPage } from './pages/ProtectedPage'
 import { RegisterPage } from './pages/RegisterPage'
+import { SettlementDetailsPage } from './pages/SettlementDetailsPage'
 import { SettlementsPage } from './pages/SettlementsPage'
 import './App.css'
 
@@ -47,6 +48,7 @@ function App() {
         >
           <Route index element={<ProtectedPage />} />
           <Route path="settlements" element={<SettlementsPage />} />
+          <Route path="settlements/:settlementId" element={<SettlementDetailsPage />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/" replace />} />

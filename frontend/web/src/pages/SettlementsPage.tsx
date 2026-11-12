@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { apiRequest } from '../api/client'
 import { clearStoredToken } from '../auth/tokenStorage'
 
@@ -132,6 +132,7 @@ export function SettlementsPage() {
                   <th>Nazwa</th>
                   <th>Poziom</th>
                   <th>Data założenia</th>
+                  <th>Akcja</th>
                 </tr>
               </thead>
               <tbody>
@@ -140,6 +141,11 @@ export function SettlementsPage() {
                     <td>{settlement.name}</td>
                     <td>{settlement.level}</td>
                     <td>{formatDate(settlement.foundedAt)}</td>
+                    <td>
+                      <Link to={`/protected/settlements/${settlement.id}`} className="button secondary compact-button">
+                        Podgląd
+                      </Link>
+                    </td>
                   </tr>
                 ))}
               </tbody>

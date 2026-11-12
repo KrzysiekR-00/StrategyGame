@@ -46,6 +46,34 @@ public class SettlementController : ControllerBase
         return Ok(new { items = settlements });
     }
 
+    [HttpGet("{id:int}")]
+    public async Task<ActionResult<object>> GetById(int id)
+    {
+        var userId = GetCurrentUserId();
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            return Unauthorized(new { message = "Brak danych użytkownika w tokenie." });
+        }
+
+        var settlement = await _db.Settlements
+            .Where(item => item.Id == id && item.OwnerUserId == userId)
+            .Select(item => new
+            {
+                id = item.Id,
+                name = item.Name,
+                foundedAt = item.FoundedAt,
+                level = item.Level,
+            })
+            .FirstOrDefaultAsync();
+
+        if (settlement is null)
+        {
+            return NotFound(new { message = "Osada nie została znaleziona." });
+        }
+
+        return Ok(settlement);
+    }
+
     [HttpPost]
     public async Task<ActionResult<object>> Create([FromBody] CreateSettlementRequest request)
     {
