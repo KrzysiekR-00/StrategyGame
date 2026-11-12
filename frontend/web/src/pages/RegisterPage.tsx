@@ -19,8 +19,8 @@ export function RegisterPage() {
       return
     }
 
-    if (password.length < 8) {
-      setError('Hasło musi mieć co najmniej 8 znaków.')
+    if (password.length < 6) {
+      setError('Hasło musi mieć co najmniej 6 znaków.')
       return
     }
 
@@ -81,7 +81,7 @@ export function RegisterPage() {
             type="password"
             value={password}
             onChange={(event) => setPassword(event.target.value)}
-            minLength={8}
+            minLength={6}
             maxLength={100}
             required
             autoComplete="new-password"
@@ -94,7 +94,7 @@ export function RegisterPage() {
             type="password"
             value={confirmPassword}
             onChange={(event) => setConfirmPassword(event.target.value)}
-            minLength={8}
+            minLength={6}
             maxLength={100}
             required
             autoComplete="new-password"

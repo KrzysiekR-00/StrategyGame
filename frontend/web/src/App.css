@@ -168,6 +168,12 @@ h2 {
   border-radius: 10px;
   font-size: 1rem;
   background: white;
+  color: #111827;
+}
+
+.building-form select option {
+  color: #111827;
+  background: white;
 }
 
 .auth-form {

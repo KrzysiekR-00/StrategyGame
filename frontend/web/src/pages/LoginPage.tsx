@@ -25,8 +25,8 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
       return
     }
 
-    if (password.length < 8) {
-      setError('Hasło musi mieć co najmniej 8 znaków.')
+    if (password.length < 6) {
+      setError('Hasło musi mieć co najmniej 6 znaków.')
       return
     }
 
@@ -85,7 +85,7 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
             type="password"
             value={password}
             onChange={(event) => setPassword(event.target.value)}
-            minLength={8}
+            minLength={6}
             maxLength={100}
             required
             autoComplete="current-password"
