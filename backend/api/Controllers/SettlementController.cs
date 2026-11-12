@@ -71,7 +71,7 @@ public class SettlementController : ControllerBase
         var buildingLookup = BuildingCatalog.All
             .ToDictionary(item => item.Code, item => item.Name, StringComparer.OrdinalIgnoreCase);
 
-        var maxSlots = settlement.Level * 3;
+        var maxSlots = SettlementLevelCatalog.GetBuildingSlotsForLevel(settlement.Level);
         var occupiedSlots = buildings.Count;
 
         return Ok(new

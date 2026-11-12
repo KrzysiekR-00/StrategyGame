@@ -27,6 +27,16 @@ public class BuildingController : ControllerBase
             {
                 code = building.Code,
                 name = building.Name,
+                inputResources = building.InputResources.Select(resource => new
+                {
+                    resourceCode = resource.ResourceCode,
+                    quantity = resource.Quantity,
+                }).ToList(),
+                outputResources = building.OutputResources.Select(resource => new
+                {
+                    resourceCode = resource.ResourceCode,
+                    quantity = resource.Quantity,
+                }).ToList(),
             })
             .ToList());
     }
@@ -53,7 +63,7 @@ public class BuildingController : ControllerBase
             .OrderBy(item => item.BuiltAt)
             .ToListAsync();
 
-        var maxSlots = settlement.Level * 3;
+        var maxSlots = SettlementLevelCatalog.GetBuildingSlotsForLevel(settlement.Level);
         var buildingLookup = BuildingCatalog.All
             .ToDictionary(item => item.Code, item => item.Name, StringComparer.OrdinalIgnoreCase);
 
@@ -107,8 +117,13 @@ public class BuildingController : ControllerBase
             return BadRequest(new { message = "Wybrany typ budynku jest niepoprawny." });
         }
 
-        var maxSlots = settlement.Level * 3;
+        var maxSlots = SettlementLevelCatalog.GetBuildingSlotsForLevel(settlement.Level);
         var occupiedSlots = await _db.SettlementBuildings.CountAsync(item => item.SettlementId == settlement.Id);
+
+        if (maxSlots <= 0)
+        {
+            return BadRequest(new { message = "Ta osada nie ma skonfigurowanych slotów budynków." });
+        }
 
         if (occupiedSlots >= maxSlots)
         {
