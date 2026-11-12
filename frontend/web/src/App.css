@@ -126,6 +126,50 @@ h2 {
   font-size: 0.9rem;
 }
 
+.building-section {
+  margin-top: 24px;
+}
+
+.building-section h3 {
+  margin-bottom: 12px;
+}
+
+.building-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.building-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  background: #f8fafc;
+}
+
+.building-item small {
+  color: #6b7280;
+}
+
+.building-form {
+  margin-top: 24px;
+}
+
+.building-form select {
+  padding: 12px 14px;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  font-size: 1rem;
+  background: white;
+}
+
 .auth-form {
   display: flex;
   flex-direction: column;

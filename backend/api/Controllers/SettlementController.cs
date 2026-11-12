@@ -56,22 +56,43 @@ public class SettlementController : ControllerBase
         }
 
         var settlement = await _db.Settlements
-            .Where(item => item.Id == id && item.OwnerUserId == userId)
-            .Select(item => new
-            {
-                id = item.Id,
-                name = item.Name,
-                foundedAt = item.FoundedAt,
-                level = item.Level,
-            })
-            .FirstOrDefaultAsync();
+            .FirstOrDefaultAsync(item => item.Id == id && item.OwnerUserId == userId);
 
         if (settlement is null)
         {
             return NotFound(new { message = "Osada nie została znaleziona." });
         }
 
-        return Ok(settlement);
+        var buildings = await _db.SettlementBuildings
+            .Where(item => item.SettlementId == settlement.Id)
+            .OrderBy(item => item.BuiltAt)
+            .ToListAsync();
+
+        var buildingLookup = BuildingCatalog.All
+            .ToDictionary(item => item.Code, item => item.Name, StringComparer.OrdinalIgnoreCase);
+
+        var maxSlots = settlement.Level * 3;
+        var occupiedSlots = buildings.Count;
+
+        return Ok(new
+        {
+            id = settlement.Id,
+            name = settlement.Name,
+            foundedAt = settlement.FoundedAt,
+            level = settlement.Level,
+            maxSlots,
+            occupiedSlots,
+            availableSlots = maxSlots - occupiedSlots,
+            buildings = buildings.Select(building => new
+            {
+                id = building.Id,
+                buildingType = building.BuildingType,
+                name = buildingLookup.TryGetValue(building.BuildingType, out var buildingName)
+                    ? buildingName
+                    : building.BuildingType,
+                builtAt = building.BuiltAt,
+            }).ToList(),
+        });
     }
 
     [HttpPost]

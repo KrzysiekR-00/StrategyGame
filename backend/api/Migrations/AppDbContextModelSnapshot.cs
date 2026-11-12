@@ -239,6 +239,30 @@ namespace api.Migrations
                     b.ToTable("Settlements");
                 });
 
+            modelBuilder.Entity("api.Models.SettlementBuilding", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("BuildingType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("BuiltAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("SettlementId")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SettlementId");
+
+                    b.ToTable("SettlementBuildings");
+                });
+
             modelBuilder.Entity("api.Models.TestRecord", b =>
                 {
                     b.Property<int>("Id")
@@ -320,6 +344,17 @@ namespace api.Migrations
                         .HasForeignKey("OwnerUserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("api.Models.SettlementBuilding", b =>
+                {
+                    b.HasOne("api.Models.Settlement", "Settlement")
+                        .WithMany()
+                        .HasForeignKey("SettlementId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Settlement");
                 });
 #pragma warning restore 612, 618
         }

@@ -13,6 +13,7 @@ public class AppDbContext : IdentityDbContext<IdentityUser>
 
     public DbSet<TestRecord> TestRecords => Set<TestRecord>();
     public DbSet<Settlement> Settlements => Set<Settlement>();
+    public DbSet<SettlementBuilding> SettlementBuildings => Set<SettlementBuilding>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -27,6 +28,16 @@ public class AppDbContext : IdentityDbContext<IdentityUser>
             entity.HasOne<IdentityUser>()
                 .WithMany()
                 .HasForeignKey(settlement => settlement.OwnerUserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<SettlementBuilding>(entity =>
+        {
+            entity.HasKey(item => item.Id);
+            entity.Property(item => item.BuildingType).HasMaxLength(50).IsRequired();
+            entity.HasOne(item => item.Settlement)
+                .WithMany()
+                .HasForeignKey(item => item.SettlementId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
     }
