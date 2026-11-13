@@ -9,6 +9,42 @@
   background: #f8fafc;
 }
 
+.resource-bar {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 16px 24px 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.resource-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: #e2e8f0;
+  color: #0f172a;
+  border: 1px solid #cbd5e1;
+  font-weight: 700;
+}
+
+.resource-name {
+  opacity: 0.85;
+}
+
+.resource-value {
+  min-width: 2ch;
+  text-align: right;
+}
+
+.resource-empty {
+  color: #475569;
+  font-size: 0.95rem;
+}
+
 .nav {
   max-width: 960px;
   margin: 0 auto;

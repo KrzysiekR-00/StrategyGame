@@ -209,6 +209,32 @@ namespace api.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("api.Models.PlayerResource", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<double>("Quantity")
+                        .HasColumnType("REAL");
+
+                    b.Property<string>("ResourceId")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId", "ResourceId")
+                        .IsUnique();
+
+                    b.ToTable("PlayerResources");
+                });
+
             modelBuilder.Entity("api.Models.Settlement", b =>
                 {
                     b.Property<int>("Id")

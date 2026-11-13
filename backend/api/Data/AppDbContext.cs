@@ -14,6 +14,7 @@ public class AppDbContext : IdentityDbContext<IdentityUser>
     public DbSet<TestRecord> TestRecords => Set<TestRecord>();
     public DbSet<Settlement> Settlements => Set<Settlement>();
     public DbSet<SettlementBuilding> SettlementBuildings => Set<SettlementBuilding>();
+    public DbSet<PlayerResource> PlayerResources => Set<PlayerResource>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -39,6 +40,14 @@ public class AppDbContext : IdentityDbContext<IdentityUser>
                 .WithMany()
                 .HasForeignKey(item => item.SettlementId)
                 .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<PlayerResource>(entity =>
+        {
+            entity.HasKey(item => item.Id);
+            entity.Property(item => item.UserId).IsRequired();
+            entity.Property(item => item.ResourceId).HasMaxLength(50).IsRequired();
+            entity.HasIndex(item => new { item.UserId, item.ResourceId }).IsUnique();
         });
     }
 }

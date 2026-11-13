@@ -65,6 +65,17 @@ public class AuthController : ControllerBase
         };
 
         _db.Settlements.Add(starterSettlement);
+
+        foreach (var resource in ResourceCatalog.All)
+        {
+            _db.PlayerResources.Add(new PlayerResource
+            {
+                UserId = user.Id,
+                ResourceId = resource.Code,
+                Quantity = 0,
+            });
+        }
+
         await _db.SaveChangesAsync();
 
         return StatusCode(StatusCodes.Status201Created, new

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, Outlet, useNavigate } from 'react-router-dom'
+import { apiRequest } from '../api/client'
 import { clearCachedCurrentUser, fetchCurrentUser, getCachedCurrentUser } from '../auth/currentUser'
 import { clearStoredToken } from '../auth/tokenStorage'
 
@@ -7,9 +8,16 @@ type ProtectedLayoutProps = {
   onLogout: () => void
 }
 
+type PlayerResource = {
+  resourceCode: string
+  resourceName: string
+  quantity: number
+}
+
 export function ProtectedLayout({ onLogout }: ProtectedLayoutProps) {
   const navigate = useNavigate()
   const [username, setUsername] = useState<string | null>(() => getCachedCurrentUser()?.username ?? null)
+  const [resources, setResources] = useState<PlayerResource[]>([])
   const [isLoadingUser, setIsLoadingUser] = useState(!username)
 
   useEffect(() => {
@@ -39,11 +47,31 @@ export function ProtectedLayout({ onLogout }: ProtectedLayoutProps) {
       }
     }
 
+    async function loadResources() {
+      try {
+        const nextResources = await apiRequest<PlayerResource[]>('/api/resource/me', {
+          method: 'GET',
+          auth: true,
+          onUnauthorized: handleUnauthorized,
+        })
+
+        if (isMounted) {
+          setResources(nextResources)
+        }
+      } catch {
+        if (isMounted) {
+          setResources([])
+        }
+      }
+    }
+
     if (!username) {
       void loadCurrentUser()
     } else {
       setIsLoadingUser(false)
     }
+
+    void loadResources()
 
     return () => {
       isMounted = false
@@ -75,6 +103,19 @@ export function ProtectedLayout({ onLogout }: ProtectedLayoutProps) {
           </div>
         </nav>
       </header>
+
+      <div className="resource-bar" aria-label="Zasoby gracza">
+        {resources.length === 0 ? (
+          <span className="resource-empty">Ładowanie zasobów...</span>
+        ) : (
+          resources.map((resource) => (
+            <div key={resource.resourceCode} className="resource-pill">
+              <span className="resource-name">{resource.resourceName}</span>
+              <span className="resource-value">{resource.quantity}</span>
+            </div>
+          ))
+        )}
+      </div>
 
       <main className="page-content">
         <Outlet />
