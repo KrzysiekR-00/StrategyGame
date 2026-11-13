@@ -1,5 +1,6 @@
 using System.Text;
 using api.Data;
+using api.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -25,6 +26,8 @@ builder.Services.AddCors(options =>
 builder.Services.AddControllers();
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
+builder.Services.AddSingleton<ResourceProductionProcessor>();
+builder.Services.AddHostedService<ResourceProductionBackgroundService>();
 
 builder.Services
     .AddIdentityCore<IdentityUser>(options =>
