@@ -4,6 +4,17 @@ namespace api.Services;
 
 public sealed class ResourceProductionProcessor
 {
+    private readonly IReadOnlyDictionary<string, BuildingDefinition> _buildingDefinitions;
+
+    public ResourceProductionProcessor(IReadOnlyList<BuildingDefinition>? buildingDefinitions = null)
+    {
+        var definitions = buildingDefinitions ?? BuildingCatalog.All;
+        _buildingDefinitions = definitions.ToDictionary(
+            item => item.Code,
+            item => item,
+            StringComparer.OrdinalIgnoreCase);
+    }
+
     public IReadOnlyDictionary<string, double> ProcessCycle(
         IReadOnlyDictionary<string, double> startingInventory,
         IReadOnlyCollection<SettlementBuilding> buildings)
@@ -14,8 +25,8 @@ public sealed class ResourceProductionProcessor
         var productionDelta = new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase);
 
         foreach (var building in buildings
-                     .OrderBy(item => item.BuiltAt)
-                     .ThenBy(item => item.Id))
+                      .OrderBy(item => item.BuiltAt)
+                      .ThenBy(item => item.Id))
         {
             var buildingDefinition = GetBuildingDefinition(building.BuildingType);
             if (buildingDefinition is null)
@@ -29,16 +40,17 @@ public sealed class ResourceProductionProcessor
             }
 
             ApplyBuildingConsumption(buildingDefinition, availableInventory, productionDelta);
-            ApplyBuildingProduction(buildingDefinition, availableInventory, productionDelta);
+            ApplyBuildingProduction(buildingDefinition, productionDelta);
         }
 
         return productionDelta;
     }
 
-    private static BuildingDefinition? GetBuildingDefinition(string buildingType)
+    private BuildingDefinition? GetBuildingDefinition(string buildingType)
     {
-        return BuildingCatalog.All.FirstOrDefault(item =>
-            string.Equals(item.Code, buildingType, StringComparison.OrdinalIgnoreCase));
+        return _buildingDefinitions.TryGetValue(buildingType, out var definition)
+            ? definition
+            : null;
     }
 
     private static bool CanBuildingRun(
@@ -77,7 +89,6 @@ public sealed class ResourceProductionProcessor
 
     private static void ApplyBuildingProduction(
         BuildingDefinition buildingDefinition,
-        IDictionary<string, double> availableInventory,
         IDictionary<string, double> productionDelta)
     {
         foreach (var output in buildingDefinition.OutputResources)
