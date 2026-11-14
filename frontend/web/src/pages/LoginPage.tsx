@@ -1,14 +1,11 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { setStoredToken } from '../auth/tokenStorage'
+import { useAuth } from '../auth/AuthContext'
 
-type LoginPageProps = {
-  onLoginSuccess: (token: string) => void
-}
-
-export function LoginPage({ onLoginSuccess }: LoginPageProps) {
+export function LoginPage() {
   const navigate = useNavigate()
+  const { login } = useAuth()
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [message, setMessage] = useState<string | null>(null)
@@ -47,8 +44,7 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
       }
 
       if (data?.token) {
-        setStoredToken(data.token)
-        onLoginSuccess(data.token)
+        login(data.token)
       }
 
       setMessage(data?.message ?? 'Zalogowano pomyślnie.')

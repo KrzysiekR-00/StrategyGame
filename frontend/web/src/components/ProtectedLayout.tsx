@@ -1,12 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Link, Outlet, useNavigate } from 'react-router-dom'
 import { apiRequest } from '../api/client'
+import { useAuth } from '../auth/AuthContext'
 import { clearCachedCurrentUser, fetchCurrentUser, getCachedCurrentUser } from '../auth/currentUser'
-import { clearStoredToken } from '../auth/tokenStorage'
-
-type ProtectedLayoutProps = {
-  onLogout: () => void
-}
 
 type PlayerResource = {
   resourceCode: string
@@ -14,8 +10,9 @@ type PlayerResource = {
   quantity: number
 }
 
-export function ProtectedLayout({ onLogout }: ProtectedLayoutProps) {
+export function ProtectedLayout() {
   const navigate = useNavigate()
+  const { logout } = useAuth()
   const [username, setUsername] = useState<string | null>(() => getCachedCurrentUser()?.username ?? null)
   const [resources, setResources] = useState<PlayerResource[]>([])
   const [isLoadingUser, setIsLoadingUser] = useState(!username)
@@ -25,8 +22,7 @@ export function ProtectedLayout({ onLogout }: ProtectedLayoutProps) {
 
     const handleUnauthorized = () => {
       clearCachedCurrentUser()
-      clearStoredToken()
-      onLogout()
+      logout()
       navigate('/login', { replace: true })
     }
 
@@ -76,7 +72,7 @@ export function ProtectedLayout({ onLogout }: ProtectedLayoutProps) {
     return () => {
       isMounted = false
     }
-  }, [navigate, onLogout, username])
+  }, [logout, navigate, username])
 
   const userLabel = isLoadingUser ? 'Ładowanie...' : username ? `Zalogowany: ${username}` : 'Użytkownik'
 
@@ -91,9 +87,7 @@ export function ProtectedLayout({ onLogout }: ProtectedLayoutProps) {
               type="button"
               className="button secondary"
               onClick={() => {
-                clearCachedCurrentUser()
-                clearStoredToken()
-                onLogout()
+                logout()
                 navigate('/login', { replace: true })
               }}
             >
