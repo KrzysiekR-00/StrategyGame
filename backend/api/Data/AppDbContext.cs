@@ -11,7 +11,6 @@ public class AppDbContext : IdentityDbContext<IdentityUser>
     {
     }
 
-    public DbSet<TestRecord> TestRecords => Set<TestRecord>();
     public DbSet<Settlement> Settlements => Set<Settlement>();
     public DbSet<SettlementBuilding> SettlementBuildings => Set<SettlementBuilding>();
     public DbSet<PlayerResource> PlayerResources => Set<PlayerResource>();

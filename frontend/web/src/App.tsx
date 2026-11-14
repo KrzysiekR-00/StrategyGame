@@ -5,7 +5,6 @@ import { ProtectedLayout } from './components/ProtectedLayout'
 import { PublicLayout } from './components/PublicLayout'
 import { HomePage } from './pages/HomePage'
 import { LoginPage } from './pages/LoginPage'
-import { ProtectedPage } from './pages/ProtectedPage'
 import { RegisterPage } from './pages/RegisterPage'
 import { SettlementDetailsPage } from './pages/SettlementDetailsPage'
 import { SettlementsPage } from './pages/SettlementsPage'
@@ -46,7 +45,7 @@ function App() {
           path="/protected"
           element={isAuthenticated ? <ProtectedLayout onLogout={handleLogout} /> : <Navigate to="/login" replace />}
         >
-          <Route index element={<ProtectedPage />} />
+          <Route index element={<SettlementsPage />} />
           <Route path="settlements" element={<SettlementsPage />} />
           <Route path="settlements/:settlementId" element={<SettlementDetailsPage />} />
         </Route>
