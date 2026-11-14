@@ -1,4 +1,3 @@
-using System.Security.Claims;
 using api.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -9,7 +8,7 @@ namespace api.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 [Authorize]
-public class UserController : ControllerBase
+public class UserController : AuthorizedApiController
 {
     private readonly UserManager<IdentityUser> _userManager;
 
@@ -21,12 +20,9 @@ public class UserController : ControllerBase
     [HttpGet("me")]
     public async Task<ActionResult<CurrentUserResponse>> GetCurrentUser()
     {
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)
-            ?? User.FindFirstValue("sub");
-
-        if (string.IsNullOrWhiteSpace(userId))
+        if (!TryGetUserId(out var userId))
         {
-            return Unauthorized(new { message = "Brak danych użytkownika w tokenie." });
+            return MissingUserId();
         }
 
         var user = await _userManager.FindByIdAsync(userId);

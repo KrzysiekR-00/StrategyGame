@@ -1,4 +1,3 @@
-using System.Security.Claims;
 using api.Data;
 using api.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -11,7 +10,7 @@ namespace api.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 [Authorize]
-public class SettlementController : ControllerBase
+public class SettlementController : AuthorizedApiController
 {
     private readonly AppDbContext _db;
     private readonly UserManager<IdentityUser> _userManager;
@@ -25,10 +24,9 @@ public class SettlementController : ControllerBase
     [HttpGet("me")]
     public async Task<ActionResult<object>> GetMySettlements()
     {
-        var userId = GetCurrentUserId();
-        if (string.IsNullOrWhiteSpace(userId))
+        if (!TryGetUserId(out var userId))
         {
-            return Unauthorized(new { message = "Brak danych użytkownika w tokenie." });
+            return MissingUserId();
         }
 
         var settlements = await _db.Settlements
@@ -49,10 +47,9 @@ public class SettlementController : ControllerBase
     [HttpGet("{id:int}")]
     public async Task<ActionResult<object>> GetById(int id)
     {
-        var userId = GetCurrentUserId();
-        if (string.IsNullOrWhiteSpace(userId))
+        if (!TryGetUserId(out var userId))
         {
-            return Unauthorized(new { message = "Brak danych użytkownika w tokenie." });
+            return MissingUserId();
         }
 
         var settlement = await _db.Settlements
@@ -103,10 +100,9 @@ public class SettlementController : ControllerBase
             return ValidationProblem(ModelState);
         }
 
-        var userId = GetCurrentUserId();
-        if (string.IsNullOrWhiteSpace(userId))
+        if (!TryGetUserId(out var userId))
         {
-            return Unauthorized(new { message = "Brak praw do wykonania tej operacji." });
+            return MissingUserId();
         }
 
         var user = await _userManager.FindByIdAsync(userId);
@@ -142,11 +138,5 @@ public class SettlementController : ControllerBase
             level = settlement.Level,
             message = "Osada została utworzona pomyślnie.",
         });
-    }
-
-    private string? GetCurrentUserId()
-    {
-        return User.FindFirstValue(ClaimTypes.NameIdentifier)
-            ?? User.FindFirstValue("sub");
     }
 }

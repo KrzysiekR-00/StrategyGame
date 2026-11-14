@@ -3,14 +3,13 @@ using api.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System.Security.Claims;
 
 namespace api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
 [Authorize]
-public class BuildingController : ControllerBase
+public class BuildingController : AuthorizedApiController
 {
     private readonly AppDbContext _db;
 
@@ -44,10 +43,9 @@ public class BuildingController : ControllerBase
     [HttpGet("settlement/{settlementId:int}")]
     public async Task<ActionResult<object>> GetBySettlement(int settlementId)
     {
-        var userId = GetCurrentUserId();
-        if (string.IsNullOrWhiteSpace(userId))
+        if (!TryGetUserId(out var userId))
         {
-            return Unauthorized(new { message = "Brak danych użytkownika w tokenie." });
+            return MissingUserId();
         }
 
         var settlement = await _db.Settlements
@@ -90,10 +88,9 @@ public class BuildingController : ControllerBase
     [HttpDelete("{id:int}")]
     public async Task<ActionResult<object>> Destroy(int id)
     {
-        var userId = GetCurrentUserId();
-        if (string.IsNullOrWhiteSpace(userId))
+        if (!TryGetUserId(out var userId))
         {
-            return Unauthorized(new { message = "Brak danych użytkownika w tokenie." });
+            return MissingUserId();
         }
 
         var building = await _db.SettlementBuildings
@@ -125,10 +122,9 @@ public class BuildingController : ControllerBase
             return ValidationProblem(ModelState);
         }
 
-        var userId = GetCurrentUserId();
-        if (string.IsNullOrWhiteSpace(userId))
+        if (!TryGetUserId(out var userId))
         {
-            return Unauthorized(new { message = "Brak danych użytkownika w tokenie." });
+            return MissingUserId();
         }
 
         var settlement = await _db.Settlements
@@ -188,11 +184,5 @@ public class BuildingController : ControllerBase
             occupiedSlots = occupiedSlots + 1,
             availableSlots = maxSlots - (occupiedSlots + 1),
         });
-    }
-
-    private string? GetCurrentUserId()
-    {
-        return User.FindFirstValue(ClaimTypes.NameIdentifier)
-            ?? User.FindFirstValue("sub");
     }
 }

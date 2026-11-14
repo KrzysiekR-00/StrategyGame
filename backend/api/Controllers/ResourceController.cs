@@ -1,4 +1,3 @@
-using System.Security.Claims;
 using api.Data;
 using api.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -10,7 +9,7 @@ namespace api.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 [Authorize]
-public class ResourceController : ControllerBase
+public class ResourceController : AuthorizedApiController
 {
     private readonly AppDbContext _db;
 
@@ -22,10 +21,9 @@ public class ResourceController : ControllerBase
     [HttpGet("me")]
     public async Task<ActionResult<object>> GetMyResources()
     {
-        var userId = GetCurrentUserId();
-        if (string.IsNullOrWhiteSpace(userId))
+        if (!TryGetUserId(out var userId))
         {
-            return Unauthorized(new { message = "Brak danych użytkownika w tokenie." });
+            return MissingUserId();
         }
 
         var existingResources = await _db.PlayerResources
@@ -43,11 +41,5 @@ public class ResourceController : ControllerBase
             .ToList();
 
         return Ok(resources);
-    }
-
-    private string? GetCurrentUserId()
-    {
-        return User.FindFirstValue(ClaimTypes.NameIdentifier)
-            ?? User.FindFirstValue("sub");
     }
 }
