@@ -2,7 +2,7 @@
 
 #nullable disable
 
-namespace Api.Migrations
+namespace Infrastructure.Migrations
 {
     /// <inheritdoc />
     public partial class AddIdentity : Migration

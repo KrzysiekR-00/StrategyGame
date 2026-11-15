@@ -8,7 +8,7 @@ using Infrastructure.Data;
 
 #nullable disable
 
-namespace Api.Migrations
+namespace Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
     [Migration("20261025102300_AddAuthorizedEndpoint")]
