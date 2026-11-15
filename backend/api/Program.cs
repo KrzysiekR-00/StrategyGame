@@ -1,4 +1,5 @@
 using System.Text;
+using Application.Abstractions;
 using Domain.GameRules;
 using Infrastructure.Data;
 using Infrastructure.Services;
@@ -29,6 +30,12 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddSingleton<ResourceProductionProcessor>();
 builder.Services.AddHostedService<ResourceProductionBackgroundService>();
+
+builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<ISettlementService, SettlementService>();
+builder.Services.AddScoped<IBuildingService, BuildingService>();
+builder.Services.AddScoped<IResourceService, ResourceService>();
+builder.Services.AddScoped<IUserService, UserService>();
 
 builder.Services
     .AddIdentityCore<IdentityUser>(options =>

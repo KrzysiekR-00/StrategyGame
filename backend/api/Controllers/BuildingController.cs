@@ -1,9 +1,7 @@
 using Api.Models;
-using Domain.Models;
-using Infrastructure.Data;
+using Application.Abstractions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace Api.Controllers;
 
@@ -12,33 +10,17 @@ namespace Api.Controllers;
 [Authorize]
 public class BuildingController : AuthorizedApiController
 {
-    private readonly AppDbContext _db;
+    private readonly IBuildingService _buildingService;
 
-    public BuildingController(AppDbContext db)
+    public BuildingController(IBuildingService buildingService)
     {
-        _db = db;
+        _buildingService = buildingService;
     }
 
     [HttpGet("definitions")]
     public ActionResult<object> GetDefinitions()
     {
-        return Ok(BuildingCatalog.All
-            .Select(building => new
-            {
-                code = building.Code,
-                name = building.Name,
-                inputResources = building.InputResources.Select(resource => new
-                {
-                    resourceCode = resource.ResourceCode,
-                    quantity = resource.Quantity,
-                }).ToList(),
-                outputResources = building.OutputResources.Select(resource => new
-                {
-                    resourceCode = resource.ResourceCode,
-                    quantity = resource.Quantity,
-                }).ToList(),
-            })
-            .ToList());
+        return Ok(_buildingService.GetDefinitions());
     }
 
     [HttpGet("settlement/{settlementId:int}")]
@@ -49,40 +31,21 @@ public class BuildingController : AuthorizedApiController
             return MissingUserId();
         }
 
-        var settlement = await _db.Settlements
-            .FirstOrDefaultAsync(item => item.Id == settlementId && item.OwnerUserId == userId);
-
+        var settlement = await _buildingService.GetBySettlementAsync(userId, settlementId);
         if (settlement is null)
         {
             return NotFound(new { message = "Osada nie została znaleziona." });
         }
 
-        var buildings = await _db.SettlementBuildings
-            .Where(item => item.SettlementId == settlementId)
-            .OrderBy(item => item.BuiltAt)
-            .ToListAsync();
-
-        var maxSlots = SettlementLevelCatalog.GetBuildingSlotsForLevel(settlement.Level);
-        var buildingLookup = BuildingCatalog.All
-            .ToDictionary(item => item.Code, item => item.Name, StringComparer.OrdinalIgnoreCase);
-
         return Ok(new
         {
-            settlementId = settlement.Id,
-            settlementName = settlement.Name,
-            settlementLevel = settlement.Level,
-            maxSlots,
-            occupiedSlots = buildings.Count,
-            availableSlots = maxSlots - buildings.Count,
-            buildings = buildings.Select(building => new
-            {
-                id = building.Id,
-                buildingType = building.BuildingType,
-                name = buildingLookup.TryGetValue(building.BuildingType, out var buildingName)
-                    ? buildingName
-                    : building.BuildingType,
-                builtAt = building.BuiltAt,
-            }).ToList(),
+            settlementId = settlement.SettlementId,
+            settlementName = settlement.SettlementName,
+            settlementLevel = settlement.SettlementLevel,
+            maxSlots = settlement.MaxSlots,
+            occupiedSlots = settlement.OccupiedSlots,
+            availableSlots = settlement.AvailableSlots,
+            buildings = settlement.Buildings,
         });
     }
 
@@ -94,24 +57,17 @@ public class BuildingController : AuthorizedApiController
             return MissingUserId();
         }
 
-        var building = await _db.SettlementBuildings
-            .Include(item => item.Settlement)
-            .FirstOrDefaultAsync(item => item.Id == id && item.Settlement != null && item.Settlement.OwnerUserId == userId);
-
+        var building = await _buildingService.DestroyAsync(userId, id);
         if (building is null)
         {
             return NotFound(new { message = "Nie znaleziono budynku w twojej osadzie." });
         }
 
-        var buildingType = building.BuildingType;
-        _db.SettlementBuildings.Remove(building);
-        await _db.SaveChangesAsync();
-
         return Ok(new
         {
-            id,
-            buildingType,
-            message = "Budynek został zburzony.",
+            id = building.Id,
+            buildingType = building.BuildingType,
+            message = building.Message,
         });
     }
 
@@ -128,62 +84,34 @@ public class BuildingController : AuthorizedApiController
             return MissingUserId();
         }
 
-        var settlement = await _db.Settlements
-            .FirstOrDefaultAsync(item => item.Id == request.SettlementId && item.OwnerUserId == userId);
-
-        if (settlement is null)
+        try
         {
-            return NotFound(new { message = "Nie możesz wznosić budynków w tej osadzie." });
-        }
-
-        var buildingDefinition = BuildingCatalog.All
-            .FirstOrDefault(item => string.Equals(item.Code, request.BuildingType, StringComparison.OrdinalIgnoreCase));
-
-        if (buildingDefinition is null)
-        {
-            return BadRequest(new { message = "Wybrany typ budynku jest niepoprawny." });
-        }
-
-        var maxSlots = SettlementLevelCatalog.GetBuildingSlotsForLevel(settlement.Level);
-        var occupiedSlots = await _db.SettlementBuildings.CountAsync(item => item.SettlementId == settlement.Id);
-
-        if (maxSlots <= 0)
-        {
-            return BadRequest(new { message = "Ta osada nie ma skonfigurowanych slotów budynków." });
-        }
-
-        if (occupiedSlots >= maxSlots)
-        {
-            return BadRequest(new
+            var createdBuilding = await _buildingService.BuildAsync(userId, request.SettlementId, request.BuildingType);
+            if (createdBuilding is null)
             {
-                message = $"Brak wolnych slotów w osadzie. Zajęte: {occupiedSlots}/{maxSlots}.",
-                maxSlots,
-                occupiedSlots,
-                availableSlots = maxSlots - occupiedSlots,
+                return NotFound(new { message = "Nie możesz wznosić budynków w tej osadzie." });
+            }
+
+            return Ok(new
+            {
+                id = createdBuilding.Id,
+                settlementId = createdBuilding.SettlementId,
+                buildingType = createdBuilding.BuildingType,
+                name = createdBuilding.Name,
+                builtAt = createdBuilding.BuiltAt,
+                message = createdBuilding.Message,
+                maxSlots = createdBuilding.MaxSlots,
+                occupiedSlots = createdBuilding.OccupiedSlots,
+                availableSlots = createdBuilding.AvailableSlots,
             });
         }
-
-        var createdBuilding = new SettlementBuilding
+        catch (ArgumentException ex)
         {
-            SettlementId = settlement.Id,
-            BuildingType = buildingDefinition.Code,
-            BuiltAt = DateTime.UtcNow,
-        };
-
-        _db.SettlementBuildings.Add(createdBuilding);
-        await _db.SaveChangesAsync();
-
-        return Ok(new
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
         {
-            id = createdBuilding.Id,
-            settlementId = settlement.Id,
-            buildingType = createdBuilding.BuildingType,
-            name = buildingDefinition.Name,
-            builtAt = createdBuilding.BuiltAt,
-            message = "Budynek został wybudowany.",
-            maxSlots,
-            occupiedSlots = occupiedSlots + 1,
-            availableSlots = maxSlots - (occupiedSlots + 1),
-        });
+            return BadRequest(new { message = ex.Message });
+        }
     }
 }

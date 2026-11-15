@@ -1,8 +1,6 @@
-using Domain.Models;
-using Infrastructure.Data;
+using Application.Abstractions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace Api.Controllers;
 
@@ -11,11 +9,11 @@ namespace Api.Controllers;
 [Authorize]
 public class ResourceController : AuthorizedApiController
 {
-    private readonly AppDbContext _db;
+    private readonly IResourceService _resourceService;
 
-    public ResourceController(AppDbContext db)
+    public ResourceController(IResourceService resourceService)
     {
-        _db = db;
+        _resourceService = resourceService;
     }
 
     [HttpGet("me")]
@@ -26,20 +24,7 @@ public class ResourceController : AuthorizedApiController
             return MissingUserId();
         }
 
-        var existingResources = await _db.PlayerResources
-            .Where(resource => resource.UserId == userId)
-            .ToDictionaryAsync(resource => resource.ResourceId, resource => resource.Quantity, StringComparer.OrdinalIgnoreCase);
-
-        var resources = ResourceCatalog.All
-            .Select(resource => new
-            {
-                resourceCode = resource.Code,
-                resourceName = resource.Name,
-                quantity = existingResources.TryGetValue(resource.Code, out var quantity) ? quantity : 0,
-            })
-            .OrderBy(resource => resource.resourceName)
-            .ToList();
-
+        var resources = await _resourceService.GetMyResourcesAsync(userId);
         return Ok(resources);
     }
 }

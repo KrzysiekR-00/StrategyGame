@@ -1,7 +1,6 @@
 using Api.Models;
-using Domain.Models;
+using Application.Abstractions;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Api.Controllers;
@@ -11,11 +10,11 @@ namespace Api.Controllers;
 [Authorize]
 public class UserController : AuthorizedApiController
 {
-    private readonly UserManager<IdentityUser> _userManager;
+    private readonly IUserService _userService;
 
-    public UserController(UserManager<IdentityUser> userManager)
+    public UserController(IUserService userService)
     {
-        _userManager = userManager;
+        _userService = userService;
     }
 
     [HttpGet("me")]
@@ -26,8 +25,7 @@ public class UserController : AuthorizedApiController
             return MissingUserId();
         }
 
-        var user = await _userManager.FindByIdAsync(userId);
-
+        var user = await _userService.GetCurrentUserAsync(userId);
         if (user is null)
         {
             return NotFound(new { message = "Użytkownik nie został znaleziony." });
@@ -36,7 +34,7 @@ public class UserController : AuthorizedApiController
         return Ok(new CurrentUserResponse
         {
             Id = user.Id,
-            Username = user.UserName ?? string.Empty,
+            Username = user.Username,
         });
     }
 }

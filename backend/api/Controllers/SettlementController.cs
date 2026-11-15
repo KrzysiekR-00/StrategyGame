@@ -1,10 +1,7 @@
 using Api.Models;
-using Domain.Models;
-using Infrastructure.Data;
+using Application.Abstractions;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace Api.Controllers;
 
@@ -13,13 +10,11 @@ namespace Api.Controllers;
 [Authorize]
 public class SettlementController : AuthorizedApiController
 {
-    private readonly AppDbContext _db;
-    private readonly UserManager<IdentityUser> _userManager;
+    private readonly ISettlementService _settlementService;
 
-    public SettlementController(AppDbContext db, UserManager<IdentityUser> userManager)
+    public SettlementController(ISettlementService settlementService)
     {
-        _db = db;
-        _userManager = userManager;
+        _settlementService = settlementService;
     }
 
     [HttpGet("me")]
@@ -30,18 +25,7 @@ public class SettlementController : AuthorizedApiController
             return MissingUserId();
         }
 
-        var settlements = await _db.Settlements
-            .Where(settlement => settlement.OwnerUserId == userId)
-            .OrderBy(settlement => settlement.FoundedAt)
-            .Select(settlement => new
-            {
-                id = settlement.Id,
-                name = settlement.Name,
-                foundedAt = settlement.FoundedAt,
-                level = settlement.Level,
-            })
-            .ToListAsync();
-
+        var settlements = await _settlementService.GetMySettlementsAsync(userId);
         return Ok(new { items = settlements });
     }
 
@@ -53,24 +37,11 @@ public class SettlementController : AuthorizedApiController
             return MissingUserId();
         }
 
-        var settlement = await _db.Settlements
-            .FirstOrDefaultAsync(item => item.Id == id && item.OwnerUserId == userId);
-
+        var settlement = await _settlementService.GetByIdAsync(userId, id);
         if (settlement is null)
         {
             return NotFound(new { message = "Osada nie została znaleziona." });
         }
-
-        var buildings = await _db.SettlementBuildings
-            .Where(item => item.SettlementId == settlement.Id)
-            .OrderBy(item => item.BuiltAt)
-            .ToListAsync();
-
-        var buildingLookup = BuildingCatalog.All
-            .ToDictionary(item => item.Code, item => item.Name, StringComparer.OrdinalIgnoreCase);
-
-        var maxSlots = SettlementLevelCatalog.GetBuildingSlotsForLevel(settlement.Level);
-        var occupiedSlots = buildings.Count;
 
         return Ok(new
         {
@@ -78,18 +49,10 @@ public class SettlementController : AuthorizedApiController
             name = settlement.Name,
             foundedAt = settlement.FoundedAt,
             level = settlement.Level,
-            maxSlots,
-            occupiedSlots,
-            availableSlots = maxSlots - occupiedSlots,
-            buildings = buildings.Select(building => new
-            {
-                id = building.Id,
-                buildingType = building.BuildingType,
-                name = buildingLookup.TryGetValue(building.BuildingType, out var buildingName)
-                    ? buildingName
-                    : building.BuildingType,
-                builtAt = building.BuiltAt,
-            }).ToList(),
+            maxSlots = settlement.MaxSlots,
+            occupiedSlots = settlement.OccupiedSlots,
+            availableSlots = settlement.AvailableSlots,
+            buildings = settlement.Buildings,
         });
     }
 
@@ -106,38 +69,21 @@ public class SettlementController : AuthorizedApiController
             return MissingUserId();
         }
 
-        var user = await _userManager.FindByIdAsync(userId);
-        if (user is null)
+        try
         {
-            return NotFound(new { message = "Użytkownik nie został znaleziony." });
+            var settlement = await _settlementService.CreateAsync(userId, request.Name, request.Level);
+            return Ok(new
+            {
+                id = settlement.Id,
+                name = settlement.Name,
+                foundedAt = settlement.FoundedAt,
+                level = settlement.Level,
+                message = settlement.Message,
+            });
         }
-
-        var name = request.Name?.Trim();
-        if (string.IsNullOrWhiteSpace(name))
+        catch (InvalidOperationException ex)
         {
-            name = $"Osada {await _db.Settlements.CountAsync(s => s.OwnerUserId == userId) + 1}";
+            return NotFound(new { message = ex.Message });
         }
-
-        var level = request.Level < 1 ? 1 : request.Level;
-
-        var settlement = new Settlement
-        {
-            Name = name,
-            OwnerUserId = userId,
-            FoundedAt = DateTime.UtcNow,
-            Level = level,
-        };
-
-        _db.Settlements.Add(settlement);
-        await _db.SaveChangesAsync();
-
-        return Ok(new
-        {
-            id = settlement.Id,
-            name = settlement.Name,
-            foundedAt = settlement.FoundedAt,
-            level = settlement.Level,
-            message = "Osada została utworzona pomyślnie.",
-        });
     }
 }
