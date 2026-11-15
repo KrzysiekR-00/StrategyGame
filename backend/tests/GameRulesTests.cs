@@ -1,8 +1,8 @@
-using api.Models;
-using api.Services;
+using Domain.GameRules;
+using Domain.Models;
 using Xunit;
 
-namespace tests;
+namespace Tests;
 
 public class GameRulesTests
 {

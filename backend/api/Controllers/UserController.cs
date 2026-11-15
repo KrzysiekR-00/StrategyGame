@@ -1,9 +1,10 @@
-using api.Models;
+using Api.Models;
+using Domain.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
-namespace api.Controllers;
+namespace Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]

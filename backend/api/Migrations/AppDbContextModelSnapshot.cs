@@ -3,11 +3,11 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
-using api.Data;
+using Infrastructure.Data;
 
 #nullable disable
 
-namespace api.Migrations
+namespace Api.Migrations
 {
     [DbContext(typeof(AppDbContext))]
     partial class AppDbContextModelSnapshot : ModelSnapshot
@@ -363,3 +363,4 @@ namespace api.Migrations
         }
     }
 }
+

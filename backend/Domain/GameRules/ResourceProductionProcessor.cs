@@ -1,6 +1,6 @@
-using api.Models;
+using Domain.Models;
 
-namespace api.Services;
+namespace Domain.GameRules;
 
 public sealed class ResourceProductionProcessor
 {

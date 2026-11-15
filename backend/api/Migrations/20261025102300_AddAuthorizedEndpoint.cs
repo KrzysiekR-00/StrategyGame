@@ -2,7 +2,7 @@
 
 #nullable disable
 
-namespace api.Migrations
+namespace Api.Migrations
 {
     /// <inheritdoc />
     public partial class AddAuthorizedEndpoint : Migration
@@ -39,3 +39,4 @@ namespace api.Migrations
         }
     }
 }
+

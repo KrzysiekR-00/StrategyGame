@@ -4,11 +4,11 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
-using api.Data;
+using Infrastructure.Data;
 
 #nullable disable
 
-namespace api.Migrations
+namespace Api.Migrations
 {
     [DbContext(typeof(AppDbContext))]
     [Migration("20261108155850_AddSettlements")]
@@ -328,3 +328,4 @@ namespace api.Migrations
         }
     }
 }
+

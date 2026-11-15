@@ -1,11 +1,12 @@
-using api.Data;
-using api.Models;
+using Api.Models;
+using Domain.Models;
+using Infrastructure.Data;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
-namespace api.Controllers;
+namespace Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]

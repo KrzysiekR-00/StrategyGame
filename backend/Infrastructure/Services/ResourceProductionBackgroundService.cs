@@ -1,9 +1,13 @@
-using api.Data;
-using api.Models;
+using Domain.GameRules;
+using Domain.Models;
+using Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 
-namespace api.Services;
+namespace Infrastructure.Services;
 
 public sealed class ResourceProductionBackgroundService : BackgroundService
 {

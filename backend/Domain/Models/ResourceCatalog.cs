@@ -1,4 +1,4 @@
-namespace api.Models;
+namespace Domain.Models;
 
 public static class ResourceCatalog
 {

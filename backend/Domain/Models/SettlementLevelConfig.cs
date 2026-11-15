@@ -1,4 +1,4 @@
-namespace api.Models;
+namespace Domain.Models;
 
 public sealed class SettlementLevelConfig
 {

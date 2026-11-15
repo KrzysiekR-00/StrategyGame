@@ -2,7 +2,7 @@
 
 #nullable disable
 
-namespace api.Migrations
+namespace Api.Migrations
 {
     /// <inheritdoc />
     public partial class AddResources : Migration
@@ -40,3 +40,4 @@ namespace api.Migrations
         }
     }
 }
+

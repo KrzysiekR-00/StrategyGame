@@ -1,6 +1,7 @@
 using System.Text;
-using api.Data;
-using api.Services;
+using Domain.GameRules;
+using Infrastructure.Data;
+using Infrastructure.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
